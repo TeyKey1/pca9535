@@ -13,7 +13,8 @@ On initialization all pins are configured as high impedance inputs. The PCA9535 
 The device uses 7Bit addressing and allows the hardware configuration of the first 3 address bits, allowing for up to 8 expanders on the same bus.
 
 ## General info
-The library uses the blocking I2C embedded-hal traits.
+The library uses the blocking I2C embedded-hal traits. Each instance of [`Pca9535`] owns the provided I2C instance, if multiple device access to the bus is required the user has to provide the code to make it work. No synchronization is done inside the library.
+For this purpose it is recommended to use crates like [shared-bus](https://crates.io/crates/shared-bus)
 
 # Usage
 Usage
@@ -24,38 +25,238 @@ Usage
 extern crate embedded_hal as hal;
 use hal::i2c::blocking::{Write, WriteRead};
 
-pub struct Pca9535<'a, I2C>
+pub struct Pca9535<I2C>
 where
     I2C: Write + WriteRead,
 {
     address: u8,
-    i2c: &'a mut I2C,
+    i2c: I2C,
 }
 
-impl<'a, I2C, E> Pca9535<'a, I2C>
+impl<I2C, E> Pca9535<I2C>
 where
     I2C: Write<Error = E> + WriteRead<Error = E>,
 {
-    pub fn new(addr: u8, i2c: &'a mut I2C) -> Self {
+    pub fn new(addr: u8, i2c: I2C) -> Self {
         Self {
             address: addr,
             i2c: i2c,
         }
     }
 
+    /// Drives given pin high.
+    ///
+    /// # Panics
+    /// The function will panic if the provided pin is not in the allowed range of 0-7
+    pub fn pin_set_high(&mut self, bank: GPIOBank, pin: u8) -> Result<(), E> {
+        assert!(pin < 8);
+
+        let register = match bank {
+            GPIOBank::Bank0 => Register::InputPort0,
+            GPIOBank::Bank1 => Register::InputPort1,
+        };
+
+        let mut reg_val: u8 = 0x00;
+
+        self.read_byte(register, &mut reg_val)?;
+
+        self.write_byte(register, reg_val | (0x01 << pin))
+    }
+
+    /// Drives given pin low.
+    ///
+    /// # Panics
+    /// The function will panic if the provided pin is not in the allowed range of 0-7
+    pub fn pin_set_low(&mut self, bank: GPIOBank, pin: u8) -> Result<(), E> {
+        assert!(pin < 8);
+
+        let register = match bank {
+            GPIOBank::Bank0 => Register::OutputPort0,
+            GPIOBank::Bank1 => Register::OutputPort1,
+        };
+
+        let mut reg_val: u8 = 0x00;
+
+        self.read_byte(register, &mut reg_val)?;
+
+        self.write_byte(register, reg_val & !(0x01 << pin))
+    }
+
+    /// Configures given pin as input.
+    ///
+    /// # Panics
+    /// The function will panic if the provided pin is not in the allowed range of 0-7
+    pub fn pin_into_input(&mut self, bank: GPIOBank, pin: u8) -> Result<(), E> {
+        assert!(pin < 8);
+
+        let register = match bank {
+            GPIOBank::Bank0 => Register::ConfigurationPort0,
+            GPIOBank::Bank1 => Register::ConfigurationPort1,
+        };
+
+        let mut reg_val: u8 = 0x00;
+
+        self.read_byte(register, &mut reg_val)?;
+
+        self.write_byte(register, reg_val | (0x01 << pin))
+    }
+
+    /// Configures given pin as output.
+    ///
+    /// # Panics
+    /// The function will panic if the provided pin is not in the allowed range of 0-7
+    pub fn pin_into_output(&mut self, bank: GPIOBank, pin: u8) -> Result<(), E> {
+        assert!(pin < 8);
+
+        let register = match bank {
+            GPIOBank::Bank0 => Register::ConfigurationPort0,
+            GPIOBank::Bank1 => Register::ConfigurationPort1,
+        };
+
+        let mut reg_val: u8 = 0x00;
+
+        self.read_byte(register, &mut reg_val)?;
+
+        self.write_byte(register, reg_val & !(0x01 << pin))
+    }
+
+    /// Sets the input polarity of the given pin to inverted.
+    ///
+    /// A logic high voltage applied at this input pin results in a `0` written to the devices input register and thus being registered as `low` by the driver.
+    ///
+    /// # Panics
+    /// The function will panic if the provided pin is not in the allowed range of 0-7
+    pub fn pin_inverse_polarity(&mut self, bank: GPIOBank, pin: u8) -> Result<(), E> {
+        assert!(pin < 8);
+
+        let register = match bank {
+            GPIOBank::Bank0 => Register::PolarityInversionPort0,
+            GPIOBank::Bank1 => Register::PolarityInversionPort1,
+        };
+
+        let mut reg_val: u8 = 0x00;
+
+        self.read_byte(register, &mut reg_val)?;
+
+        self.write_byte(register, reg_val | (0x01 << pin))
+    }
+
+    /// Sets the input polarity of the given pin to normal.
+    ///
+    /// A logic high voltage applied at an input pin results in a `1` written to the devices input register and thus being registered as `high` by the driver.
+    ///
+    /// # Panics
+    /// The function will panic if the provided pin is not in the allowed range of 0-7
+    pub fn pin_normal_polarity(&mut self, bank: GPIOBank, pin: u8) -> Result<(), E> {
+        assert!(pin < 8);
+
+        let register = match bank {
+            GPIOBank::Bank0 => Register::PolarityInversionPort0,
+            GPIOBank::Bank1 => Register::PolarityInversionPort1,
+        };
+
+        let mut reg_val: u8 = 0x00;
+
+        self.read_byte(register, &mut reg_val)?;
+
+        self.write_byte(register, reg_val & !(0x01 << pin))
+    }
+
+    /// Sets the input polarity of all pins to inverted.
+    ///
+    /// A logic high voltage applied at an input pin results in a `0` written to the devices input register and thus being registered as `low` by the driver.
+    pub fn inverse_polarity(&mut self) -> Result<(), E> {
+        self.write_halfword(Register::PolarityInversionPort0, 0xFFFF as u16)
+    }
+
+    /// Sets the input polarity of all pins to normal.
+    ///
+    /// A logic high voltage applied at an input pin results in a `1` written to the devices input register and thus being registered as `high` by the driver.
+    pub fn normal_polarity(&mut self) -> Result<(), E> {
+        self.write_halfword(Register::PolarityInversionPort0, 0x0 as u16)
+    }
+
+    /// Writes one byte to given register
+    ///
+    /// Only use this function if you really have to. The crate provides simpler ways of interacting with the device for most usecases.
     pub fn write_byte(&mut self, register: Register, data: u8) -> Result<(), E> {
         self.i2c.write(self.address, &[register as u8, data])
     }
 
+    /// Reads one byte of given register
+    ///
+    /// Only use this function if you really have to. The crate provides simpler ways of interacting with the device for most usecases.
     pub fn read_byte(&mut self, register: Register, buffer: &mut u8) -> Result<(), E> {
         self.i2c
             .write_read(self.address, &[register as u8], &mut [*buffer])
+    }
+
+    /// Writes one halfword to given register
+    ///
+    /// Only use this function if you really have to. The crate provides simpler ways of interacting with the device for most usecases.
+    ///
+    /// **Register pairs**
+    ///
+    /// please see [`Register`] for more information about the register pairs and how they affect the halfword read and write functions.
+    pub fn write_halfword(&mut self, register: Register, data: u16) -> Result<(), E> {
+        self.i2c.write(
+            self.address,
+            &[register as u8, data as u8, (data >> 8) as u8],
+        )
+    }
+
+    /// Reads one halfword of given register
+    ///
+    /// Only use this function if you really have to. The crate provides simpler ways of interacting with the device for most usecases.
+    ///
+    /// **Register pairs**
+    ///
+    /// please see [`Register`] for more information about the register pairs and how they affect the halfword read and write functions.
+    pub fn read_halfword(&mut self, register: Register, buffer: &mut [u8]) -> Result<(), E> {
+        self.i2c.write_read(self.address, &[register as u8], buffer)
     }
 }
 
 /// The data registers of the device
 ///
 /// The enum represents the command byte values used to access the corresponding registers.
+///
+/// # Register pairs
+/// The registers of the device are all 8 bit and act as four register pairs. Therefore writing a halfword to a register results in the 8 least significant bits being written to the provided register, while the 8 most significant bits will be automatically written to the other register of the pair.
+///
+/// **Pairs**
+/// 1) InputPort0 and InputPort1
+/// 2) OutputPort0 and Outputport1
+/// 3) PolarityInversionPort0 and PolarityInversionPort1
+/// 4) ConfigurationPort0 and ConfigurationPort1
+///
+/// Example code
+/// ```
+/// expander.write_halfword(OutputPort0, 0x4A07 as u16).unwrap();
+///
+/// let mut output_bank0: u8 = 0x00;
+/// let mut output_bank1: u8 = 0x00;
+///
+/// expander.read_byte(OutputPort0, &mut output_bank0).unwrap();
+/// expander.read_byte(OutputPort1, &mut output_bank1).unwrap();
+///
+/// assert_eq!(output_bank0, 0x07 as u8);
+/// assert_eq!(output_bank1, 0x4A as u8);
+/// ```
+/// Or
+/// ```
+/// expander.write_halfword(OutputPort1, 0x4A07 as u16).unwrap();
+///
+/// let mut output_bank0: u8 = 0x00;
+/// let mut output_bank1: u8 = 0x00;
+///
+/// expander.read_byte(OutputPort0, &mut output_bank0).unwrap();
+/// expander.read_byte(OutputPort1, &mut output_bank1).unwrap();
+///
+/// assert_eq!(output_bank0, 0x4A as u8);
+/// assert_eq!(output_bank1, 0x07 as u8);
+/// ```
+/// The same principle applies to reads.
 #[derive(Copy, Clone)]
 pub enum Register {
     InputPort0 = 0x00,
@@ -66,4 +267,11 @@ pub enum Register {
     PolarityInversionPort1 = 0x05,
     ConfigurationPort0 = 0x06,
     ConfigurationPort1 = 0x07,
+}
+
+/// The gpio banks of the device
+#[derive(Copy, Clone)]
+pub enum GPIOBank {
+    Bank0 = 0,
+    Bank1 = 1,
 }
