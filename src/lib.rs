@@ -37,6 +37,7 @@ impl<I2C, E> Pca9535<I2C>
 where
     I2C: Write<Error = E> + WriteRead<Error = E>,
 {
+    ///Creates a new instance of PCA9535 with provided address
     pub fn new(addr: u8, i2c: I2C) -> Self {
         Self {
             address: addr,
@@ -80,6 +81,54 @@ where
         self.read_byte(register, &mut reg_val)?;
 
         self.write_byte(register, reg_val & !(0x01 << pin))
+    }
+
+    /// Checks if input state of given pin is `high`. This function works with pins configured as inputs as well as outputs.
+    ///
+    /// The function result does not necessarily represent the logic level of the applied voltage at the given pin but the value inside the input register of the device. Which is `1` or `0` Depending on the current polarity inversion configuration of the pin.
+    ///
+    /// # Panics
+    /// The function will panic if the provided pin is not in the allowed range of 0-7
+    pub fn pin_is_high(&mut self, bank: GPIOBank, pin: u8) -> Result<bool, E> {
+        assert!(pin < 8);
+
+        let register = match bank {
+            GPIOBank::Bank0 => Register::InputPort0,
+            GPIOBank::Bank1 => Register::InputPort1,
+        };
+
+        let mut reg_val: u8 = 0x00;
+
+        self.read_byte(register, &mut reg_val)?;
+
+        match (reg_val >> pin) & 1 {
+            1 => Ok(true),
+            _ => Ok(false),
+        }
+    }
+
+    /// Checks if input state of given pin is `low`. This function works with pins configured as inputs as well as outputs.
+    ///
+    /// The function result does not necessarily represent the logic level of the applied voltage at the given pin but the value inside the input register of the device. Which is `1` or `0` Depending on the current polarity inversion configuration of the pin.
+    ///
+    /// # Panics
+    /// The function will panic if the provided pin is not in the allowed range of 0-7
+    pub fn pin_is_low(&mut self, bank: GPIOBank, pin: u8) -> Result<bool, E> {
+        assert!(pin < 8);
+
+        let register = match bank {
+            GPIOBank::Bank0 => Register::InputPort0,
+            GPIOBank::Bank1 => Register::InputPort1,
+        };
+
+        let mut reg_val: u8 = 0x00;
+
+        self.read_byte(register, &mut reg_val)?;
+
+        match (reg_val >> pin) & 1 {
+            1 => Ok(false),
+            _ => Ok(true),
+        }
     }
 
     /// Configures given pin as input.
