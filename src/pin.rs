@@ -1,13 +1,16 @@
+use core::cell::RefCell;
 use hal::digital::blocking::{InputPin, IoPin, OutputPin};
 use hal::digital::PinState;
 
-use crate::{Expander, GPIOBank, Register};
+use super::expander::Expander;
+use super::GPIOBank;
+use super::Register;
 
 struct ExpanderInputPin<Ex>
 where
     Ex: Expander,
 {
-    expander: Ex,
+    expander: RefCell<Ex>,
     bank: GPIOBank,
     pin: u8,
 }
@@ -16,7 +19,7 @@ struct ExpanderOutputPin<Ex>
 where
     Ex: Expander,
 {
-    expander: Ex,
+    expander: RefCell<Ex>,
     bank: GPIOBank,
     pin: u8,
 }
@@ -32,7 +35,9 @@ impl<Ex: Expander> InputPin for ExpanderInputPin<Ex> {
 
         let mut reg_val: u8 = 0x00;
 
-        self.expander.read_byte(register, &mut reg_val)?;
+        self.expander
+            .borrow_mut()
+            .read_byte(register, &mut reg_val)?;
 
         match (reg_val >> self.pin) & 1 {
             1 => Ok(true),
@@ -48,7 +53,9 @@ impl<Ex: Expander> InputPin for ExpanderInputPin<Ex> {
 
         let mut reg_val: u8 = 0x00;
 
-        self.expander.read_byte(register, &mut reg_val)?;
+        self.expander
+            .borrow_mut()
+            .read_byte(register, &mut reg_val)?;
 
         match (reg_val >> self.pin) & 1 {
             1 => Ok(false),
@@ -58,26 +65,45 @@ impl<Ex: Expander> InputPin for ExpanderInputPin<Ex> {
 }
 
 impl<Ex: Expander> IoPin<ExpanderInputPin<Ex>, ExpanderOutputPin<Ex>> for ExpanderInputPin<Ex> {
-    type Error = Expander::Error;
+    type Error = Ex::Error;
 
     fn into_input_pin(self) -> Result<ExpanderInputPin<Ex>, Self::Error> {
         Ok(self)
     }
 
     fn into_output_pin(self, state: PinState) -> Result<ExpanderOutputPin<Ex>, Self::Error> {
-        let register = match self.bank {
+        let cp_register = match self.bank {
             GPIOBank::Bank0 => Register::ConfigurationPort0,
             GPIOBank::Bank1 => Register::ConfigurationPort1,
         };
 
-        let mut reg_val: u8 = 0x00;
+        let op_register = match self.bank {
+            GPIOBank::Bank0 => Register::OutputPort0,
+            GPIOBank::Bank1 => Register::OutputPort1,
+        };
 
-        self.expander.read_byte(register, &mut reg_val)?;
+        {
+            let mut expander = self.expander.borrow_mut();
+            let mut reg_val: u8 = 0x00;
 
-        self.expander
-            .write_byte(register, reg_val & !(0x01 << self.pin))?;
+            expander.read_byte(op_register, &mut reg_val)?;
 
-        Ok(ExpanderOutputPin { ..self })
+            if let PinState::High = state {
+                expander.write_byte(op_register, reg_val | (0x01 << self.pin))?;
+            } else {
+                expander.write_byte(op_register, reg_val & !(0x01 << self.pin))?;
+            }
+
+            expander.read_byte(cp_register, &mut reg_val)?;
+
+            expander.write_byte(cp_register, reg_val & !(0x01 << self.pin))?;
+        }
+
+        Ok(ExpanderOutputPin {
+            expander: self.expander,
+            bank: self.bank,
+            pin: self.pin,
+        })
     }
 }
 
@@ -90,12 +116,12 @@ impl<Ex: Expander> OutputPin for ExpanderOutputPin<Ex> {
             GPIOBank::Bank1 => Register::OutputPort1,
         };
 
+        let mut expander = self.expander.borrow_mut();
         let mut reg_val: u8 = 0x00;
 
-        self.expander.read_byte(register, &mut reg_val)?;
+        expander.read_byte(register, &mut reg_val)?;
 
-        self.expander
-            .write_byte(register, reg_val & !(0x01 << self.pin))
+        expander.write_byte(register, reg_val & !(0x01 << self.pin))
     }
 
     fn set_high(&mut self) -> Result<(), Self::Error> {
@@ -104,17 +130,17 @@ impl<Ex: Expander> OutputPin for ExpanderOutputPin<Ex> {
             GPIOBank::Bank1 => Register::InputPort1,
         };
 
+        let mut expander = self.expander.borrow_mut();
         let mut reg_val: u8 = 0x00;
 
-        self.expander.read_byte(register, &mut reg_val)?;
+        expander.read_byte(register, &mut reg_val)?;
 
-        self.expander
-            .write_byte(register, reg_val | (0x01 << self.pin))
+        expander.write_byte(register, reg_val | (0x01 << self.pin))
     }
 }
 
 impl<Ex: Expander> IoPin<ExpanderInputPin<Ex>, ExpanderOutputPin<Ex>> for ExpanderOutputPin<Ex> {
-    type Error = Expander::Error;
+    type Error = Ex::Error;
 
     fn into_input_pin(self) -> Result<ExpanderInputPin<Ex>, Self::Error> {
         let register = match self.bank {
@@ -122,17 +148,41 @@ impl<Ex: Expander> IoPin<ExpanderInputPin<Ex>, ExpanderOutputPin<Ex>> for Expand
             GPIOBank::Bank1 => Register::ConfigurationPort1,
         };
 
-        let mut reg_val: u8 = 0x00;
+        {
+            let mut expander = self.expander.borrow_mut();
+            let mut reg_val: u8 = 0x00;
 
-        self.expander.read_byte(register, &mut reg_val)?;
+            expander.read_byte(register, &mut reg_val)?;
 
-        self.expander
-            .write_byte(register, reg_val | (0x01 << self.pin))?;
+            expander.write_byte(register, reg_val | (0x01 << self.pin))?;
+        }
 
-        Ok(ExpanderOutputPin { ..self })
+        Ok(ExpanderInputPin {
+            expander: self.expander,
+            bank: self.bank,
+            pin: self.pin,
+        })
     }
 
     fn into_output_pin(self, state: PinState) -> Result<ExpanderOutputPin<Ex>, Self::Error> {
+        let register = match self.bank {
+            GPIOBank::Bank0 => Register::OutputPort0,
+            GPIOBank::Bank1 => Register::OutputPort1,
+        };
+
+        {
+            let mut expander = self.expander.borrow_mut();
+            let mut reg_val: u8 = 0x00;
+
+            expander.read_byte(register, &mut reg_val)?;
+
+            if let PinState::High = state {
+                expander.write_byte(register, reg_val | (0x01 << self.pin))?;
+            } else {
+                expander.write_byte(register, reg_val & !(0x01 << self.pin))?;
+            }
+        }
+
         Ok(self)
     }
 }
