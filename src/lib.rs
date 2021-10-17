@@ -27,6 +27,12 @@ extern crate embedded_hal as hal;
 pub mod expander;
 pub mod pin;
 
+pub use expander::cached::Pca9535Cached;
+pub use expander::immediate::Pca9535Immediate;
+
+pub use pin::ExpanderInputPin;
+pub use pin::ExpanderOutputPin;
+
 /*impl<I2C, E> Pca9535<I2C>
 where
     I2C: Write<Error = E> + WriteRead<Error = E>,
@@ -284,6 +290,15 @@ impl Register {
             Self::PolarityInversionPort1 => Self::PolarityInversionPort0,
             Self::ConfigurationPort0 => Self::ConfigurationPort1,
             Self::ConfigurationPort1 => Self::ConfigurationPort0,
+        }
+    }
+
+    //Returns true if register is an input register
+    fn is_input(&self) -> bool {
+        match self {
+            Self::InputPort0 => true,
+            Self::InputPort1 => true,
+            _ => false,
         }
     }
 }

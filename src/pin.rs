@@ -6,6 +6,12 @@ use super::expander::Expander;
 use super::GPIOBank;
 use super::Register;
 
+/// Single input device pin implementing [`InputPin`] and [`IoPin`] trait.
+///
+/// The [`ExpanderInputPin`] instance can be used with other pieces of software using [`hal`].
+///
+/// # Multithreading
+/// The pins are not thread safe by default. This needs to be implemented by the user.
 pub struct ExpanderInputPin<Ex>
 where
     Ex: Expander,
@@ -15,6 +21,12 @@ where
     pin: u8,
 }
 
+/// Single output device pin implementing [`OutputPin`] and [`IoPin`] trait.
+///
+/// The [`ExpanderInputPin`] instance can be used with other pieces of software using [`hal`].
+///
+/// # Multithreading
+/// The pins are not thread safe by default. This needs to be implemented by the user.
 pub struct ExpanderOutputPin<Ex>
 where
     Ex: Expander,
@@ -22,6 +34,38 @@ where
     expander: RefCell<Ex>,
     bank: GPIOBank,
     pin: u8,
+}
+
+impl<Ex: Expander> ExpanderInputPin<Ex> {
+    /// Create a new input pin
+    ///
+    /// # Panics
+    /// The function will panic if the provided pin is not in the allowed range of 0-7
+    pub fn new(expander: RefCell<Ex>, bank: GPIOBank, pin: u8) -> Self {
+        assert!(pin < 8);
+
+        Self {
+            expander,
+            bank,
+            pin,
+        }
+    }
+}
+
+impl<Ex: Expander> ExpanderOutputPin<Ex> {
+    /// Create a new output pin
+    ///
+    /// # Panics
+    /// The function will panic if the provided pin is not in the allowed range of 0-7
+    pub fn new(expander: RefCell<Ex>, bank: GPIOBank, pin: u8) -> Self {
+        assert!(pin < 8);
+
+        Self {
+            expander,
+            bank,
+            pin,
+        }
+    }
 }
 
 impl<Ex: Expander> InputPin for ExpanderInputPin<Ex> {
