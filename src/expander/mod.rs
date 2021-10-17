@@ -10,7 +10,7 @@ pub trait Expander {
     fn write_byte(&mut self, register: Register, data: u8) -> Result<(), Self::Error>;
     fn read_byte(&mut self, register: Register, buffer: &mut u8) -> Result<(), Self::Error>;
     fn write_halfword(&mut self, register: Register, data: u16) -> Result<(), Self::Error>;
-    fn read_halfword(&mut self, register: Register, buffer: &mut [u8]) -> Result<(), Self::Error>;
+    fn read_halfword(&mut self, register: Register, buffer: &mut u16) -> Result<(), Self::Error>;
 }
 
 #[derive(Debug)]

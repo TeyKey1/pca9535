@@ -243,8 +243,8 @@ where
 /// expander.read_byte(OutputPort0, &mut output_bank0).unwrap();
 /// expander.read_byte(OutputPort1, &mut output_bank1).unwrap();
 ///
-/// assert_eq!(output_bank0, 0x07 as u8);
-/// assert_eq!(output_bank1, 0x4A as u8);
+/// assert_eq!(output_bank0, 0x4A as u8);
+/// assert_eq!(output_bank1, 0x07 as u8);
 /// ```
 /// Or
 /// ```
@@ -256,8 +256,8 @@ where
 /// expander.read_byte(OutputPort0, &mut output_bank0).unwrap();
 /// expander.read_byte(OutputPort1, &mut output_bank1).unwrap();
 ///
-/// assert_eq!(output_bank0, 0x4A as u8);
-/// assert_eq!(output_bank1, 0x07 as u8);
+/// assert_eq!(output_bank0, 0x07 as u8);
+/// assert_eq!(output_bank1, 0x4A as u8);
 /// ```
 /// The same principle applies to reads.
 #[derive(Copy, Clone)]
@@ -270,6 +270,22 @@ pub enum Register {
     PolarityInversionPort1 = 0x05,
     ConfigurationPort0 = 0x06,
     ConfigurationPort1 = 0x07,
+}
+
+impl Register {
+    ///Return the other pair member of the given register
+    fn get_neighbor(&self) -> Register {
+        match self {
+            Self::InputPort0 => Self::InputPort1,
+            Self::InputPort1 => Self::InputPort0,
+            Self::OutputPort0 => Self::OutputPort1,
+            Self::OutputPort1 => Self::OutputPort0,
+            Self::PolarityInversionPort0 => Self::PolarityInversionPort1,
+            Self::PolarityInversionPort1 => Self::PolarityInversionPort0,
+            Self::ConfigurationPort0 => Self::ConfigurationPort1,
+            Self::ConfigurationPort1 => Self::ConfigurationPort0,
+        }
+    }
 }
 
 /// The gpio banks of the device

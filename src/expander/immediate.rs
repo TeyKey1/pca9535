@@ -5,7 +5,7 @@ use super::ExpanderError;
 use super::Register;
 
 #[derive(Debug)]
-pub struct Pca9535<I2C>
+pub struct Pca9535Immediate<I2C>
 where
     I2C: Write + WriteRead,
 {
@@ -13,7 +13,7 @@ where
     i2c: I2C,
 }
 
-impl<I2C: Write + WriteRead> Expander for Pca9535<I2C> {
+impl<I2C: Write + WriteRead> Expander for Pca9535Immediate<I2C> {
     type Error = ExpanderError<<I2C as WriteRead>::Error, <I2C as Write>::Error>;
 
     /// Writes one byte to given register
@@ -45,7 +45,7 @@ impl<I2C: Write + WriteRead> Expander for Pca9535<I2C> {
         self.i2c
             .write(
                 self.address,
-                &[register as u8, data as u8, (data >> 8) as u8],
+                &[register as u8, (data >> 8) as u8, data as u8],
             )
             .map_err(Self::Error::from_write)
     }
@@ -57,9 +57,16 @@ impl<I2C: Write + WriteRead> Expander for Pca9535<I2C> {
     /// **Register pairs**
     ///
     /// please see [`Register`] for more information about the register pairs and how they affect the halfword read and write functions.
-    fn read_halfword(&mut self, register: Register, buffer: &mut [u8]) -> Result<(), Self::Error> {
+    fn read_halfword(&mut self, register: Register, buffer: &mut u16) -> Result<(), Self::Error> {
+        let reg_1_val: u8 = 0x00;
+        let reg_2_val: u8 = 0x00;
+
         self.i2c
-            .write_read(self.address, &[register as u8], buffer)
-            .map_err(Self::Error::from_write_read)
+            .write_read(self.address, &[register as u8], &mut [reg_1_val, reg_2_val])
+            .map_err(Self::Error::from_write_read)?;
+
+        *buffer = (reg_1_val as u16) << 8 & reg_2_val as u16;
+
+        Ok(())
     }
 }

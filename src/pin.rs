@@ -6,7 +6,7 @@ use super::expander::Expander;
 use super::GPIOBank;
 use super::Register;
 
-struct ExpanderInputPin<Ex>
+pub struct ExpanderInputPin<Ex>
 where
     Ex: Expander,
 {
@@ -15,7 +15,7 @@ where
     pin: u8,
 }
 
-struct ExpanderOutputPin<Ex>
+pub struct ExpanderOutputPin<Ex>
 where
     Ex: Expander,
 {
