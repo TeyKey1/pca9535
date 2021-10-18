@@ -13,7 +13,7 @@ On initialization all pins are configured as high impedance inputs. The PCA9535 
 The device uses 7Bit addressing and allows the hardware configuration of the first 3 address bits, allowing for up to 8 expanders on the same bus.
 
 ## General info
-The library uses the blocking I2C embedded-hal traits. Each instance of [`Pca9535`] owns the provided I2C instance, if multiple device access to the bus is required the user has to provide the code to make it work. No synchronization is done inside the library.
+The library uses the blocking I2C embedded-hal traits. Each implementation of [`expander::Expander`] owns the provided I2C instance, if multiple device access to the bus is required the user has to provide the code to make it work. No synchronization is done inside the library.
 For this purpose it is recommended to use crates like [shared-bus](https://crates.io/crates/shared-bus)
 
 # Usage
@@ -304,4 +304,10 @@ impl Register {
 pub enum GPIOBank {
     Bank0 = 0,
     Bank1 = 1,
+}
+
+/// The possible polarity states of inputs and outputs of the device
+pub enum Polarity {
+    Normal = 0,
+    Inverse = 1,
 }
