@@ -295,11 +295,7 @@ impl Register {
 
     //Returns true if register is an input register
     fn is_input(&self) -> bool {
-        match self {
-            Self::InputPort0 => true,
-            Self::InputPort1 => true,
-            _ => false,
-        }
+        matches!(self, Self::InputPort0 | Self::InputPort1)
     }
 }
 
