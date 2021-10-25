@@ -13,6 +13,21 @@ where
     i2c: I2C,
 }
 
+impl<I2C: Write + WriteRead> Pca9535Immediate<I2C>{
+    ///Creates a new immediate PCA9535 instance.
+    ///
+    /// # Panics
+    /// If given device hardware address is outside of the permittable range of `32-39`.
+    pub fn new(i2c: I2C, address: u8) -> Self {
+        assert!(address > 31 && address < 40);
+
+        Self {
+            address,
+            i2c,
+        }
+    }
+}
+
 impl<I2C: Write + WriteRead> Expander for Pca9535Immediate<I2C> {
     type Error = ExpanderError<<I2C as WriteRead>::Error, <I2C as Write>::Error>;
 
