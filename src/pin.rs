@@ -45,7 +45,7 @@ impl<Ex: Expander> ExpanderInputPin<Ex> {
     ///
     /// # Panics
     /// The function will panic if the provided pin is not in the allowed range of 0-7
-    pub fn new(expander: Rc<RefCell<Ex>>, bank: GPIOBank, pin: u8) -> Result<Self, <Ex as Expander>::Error> {
+    pub fn new(expander:& Rc<RefCell<Ex>>, bank: GPIOBank, pin: u8) -> Result<Self, <Ex as Expander>::Error> {
         assert!(pin < 8);
 
         let register = match bank {
@@ -63,7 +63,7 @@ impl<Ex: Expander> ExpanderInputPin<Ex> {
         }
 
         Ok(Self {
-            expander,
+            expander: Rc::clone(expander),
             bank,
             pin,
         })
@@ -100,7 +100,7 @@ impl<Ex: Expander> ExpanderOutputPin<Ex> {
     ///
     /// # Panics
     /// The function will panic if the provided pin is not in the allowed range of 0-7
-    pub fn new(expander: Rc<RefCell<Ex>>, bank: GPIOBank, pin: u8, state: PinState) -> Result<Self, <Ex as Expander>::Error> {
+    pub fn new(expander: & Rc<RefCell<Ex>>, bank: GPIOBank, pin: u8, state: PinState) -> Result<Self, <Ex as Expander>::Error> {
         assert!(pin < 8);
 
         let cp_register = match bank {
@@ -131,7 +131,7 @@ impl<Ex: Expander> ExpanderOutputPin<Ex> {
         }
 
         Ok(Self {
-            expander,
+            expander: Rc::clone(expander),
             bank,
             pin,
         })
