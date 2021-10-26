@@ -33,6 +33,8 @@ pub use expander::immediate::Pca9535Immediate;
 pub use pin::ExpanderInputPin;
 pub use pin::ExpanderOutputPin;
 
+pub use hal::digital::PinState;
+
 /*impl<I2C, E> Pca9535<I2C>
 where
     I2C: Write<Error = E> + WriteRead<Error = E>,
