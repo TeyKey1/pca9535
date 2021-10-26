@@ -1,3 +1,6 @@
+extern crate alloc;
+
+use alloc::rc::Rc;
 use core::cell::RefCell;
 use hal::digital::blocking::{InputPin, IoPin, OutputPin, StatefulOutputPin};
 use hal::digital::PinState;
@@ -17,7 +20,7 @@ pub struct ExpanderInputPin<Ex>
 where
     Ex: Expander,
 {
-    expander: RefCell<Ex>,
+    expander: Rc<RefCell<Ex>>,
     bank: GPIOBank,
     pin: u8,
 }
@@ -32,7 +35,7 @@ pub struct ExpanderOutputPin<Ex>
 where
     Ex: Expander,
 {
-    expander: RefCell<Ex>,
+    expander: Rc<RefCell<Ex>>,
     bank: GPIOBank,
     pin: u8,
 }
@@ -42,7 +45,7 @@ impl<Ex: Expander> ExpanderInputPin<Ex> {
     ///
     /// # Panics
     /// The function will panic if the provided pin is not in the allowed range of 0-7
-    pub fn new(expander: RefCell<Ex>, bank: GPIOBank, pin: u8) -> Result<Self, <Ex as Expander>::Error> {
+    pub fn new(expander: Rc<RefCell<Ex>>, bank: GPIOBank, pin: u8) -> Result<Self, <Ex as Expander>::Error> {
         assert!(pin < 8);
 
         let register = match bank {
@@ -97,7 +100,7 @@ impl<Ex: Expander> ExpanderOutputPin<Ex> {
     ///
     /// # Panics
     /// The function will panic if the provided pin is not in the allowed range of 0-7
-    pub fn new(expander: RefCell<Ex>, bank: GPIOBank, pin: u8, state: PinState) -> Result<Self, <Ex as Expander>::Error> {
+    pub fn new(expander: Rc<RefCell<Ex>>, bank: GPIOBank, pin: u8, state: PinState) -> Result<Self, <Ex as Expander>::Error> {
         assert!(pin < 8);
 
         let cp_register = match bank {
