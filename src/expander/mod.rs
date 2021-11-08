@@ -4,6 +4,7 @@ use crate::Register;
 
 pub mod cached;
 pub mod immediate;
+pub mod mutex;
 
 pub trait Expander {
     type Error: core::fmt::Debug;

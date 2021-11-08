@@ -2,7 +2,7 @@ extern crate alloc;
 
 use alloc::rc::Rc;
 use core::cell::RefCell;
-use hal::digital::blocking::{InputPin, IoPin, OutputPin, StatefulOutputPin};
+use hal::digital::blocking::{InputPin, IoPin, OutputPin};
 use hal::digital::PinState;
 
 use super::expander::Expander;
