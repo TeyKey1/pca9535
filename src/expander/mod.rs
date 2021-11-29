@@ -5,6 +5,7 @@ use crate::Register;
 pub mod cached;
 pub mod immediate;
 pub mod mutex;
+pub mod sync;
 
 pub trait Expander {
     type Error: core::fmt::Debug;
@@ -12,6 +13,14 @@ pub trait Expander {
     fn read_byte(&mut self, register: Register, buffer: &mut u8) -> Result<(), Self::Error>;
     fn write_halfword(&mut self, register: Register, data: u16) -> Result<(), Self::Error>;
     fn read_halfword(&mut self, register: Register, buffer: &mut u16) -> Result<(), Self::Error>;
+}
+
+pub trait SyncExpander {
+    type Error: core::fmt::Debug;
+    fn write_byte(&self, register: Register, data: u8) -> Result<(), Self::Error>;
+    fn read_byte(&self, register: Register, buffer: &mut u8) -> Result<(), Self::Error>;
+    fn write_halfword(&self, register: Register, data: u16) -> Result<(), Self::Error>;
+    fn read_halfword(&self, register: Register, buffer: &mut u16) -> Result<(), Self::Error>;
 }
 
 #[derive(Debug)]
