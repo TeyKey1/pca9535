@@ -7,7 +7,6 @@ use super::{mutex::ExpanderMutex, Expander};
 /// A wrapper struct to use an Expander as multiple instances of [`ExpanderInputPin`] or [`ExpanderOutputPin`] making the pins sync.
 pub struct IoExpander<Em, Ex>
 where
-    Ex: Expander,
     Em: ExpanderMutex<Ex>,
 {
     expander_mutex: Em,
