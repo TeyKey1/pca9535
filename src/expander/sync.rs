@@ -14,6 +14,16 @@ where
     phantom_data: PhantomData<Ex>,
 }
 
+impl<Em: ExpanderMutex<Ex>, Ex: Expander> IoExpander<Em, Ex> {
+    ///Creates a new IoExpander instance out of a ExpanderMutex
+    pub fn new(expander_mutex: Em) -> IoExpander<Em, Ex> {
+        IoExpander {
+            expander_mutex,
+            phantom_data: PhantomData,
+        }
+    }
+}
+
 impl<Em: ExpanderMutex<Ex>, Ex: Expander> SyncExpander for IoExpander<Em, Ex> {
     type Error = <Ex as Expander>::Error;
 
