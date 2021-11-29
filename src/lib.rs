@@ -20,7 +20,7 @@ For this purpose it is recommended to use crates like [shared-bus](https://crate
 Usage
 */
 
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
 
 extern crate embedded_hal as hal;
 

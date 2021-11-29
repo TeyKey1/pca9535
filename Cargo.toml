@@ -9,6 +9,7 @@ readme = "README.md"
 license = "MIT"
 
 [features]
+default = ["std"]
 std = []
 
 [dependencies]
