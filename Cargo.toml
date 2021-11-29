@@ -8,5 +8,8 @@ description = "PCA 9535 IO-Expander driver using embedded-hal"
 readme = "README.md"
 license = "MIT"
 
+[features]
+std = []
+
 [dependencies]
 embedded-hal = "=1.0.0-alpha.5"
