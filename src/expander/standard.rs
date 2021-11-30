@@ -1,3 +1,5 @@
+//! Implements the standard interface for all types implementing [`Expander`] trait.
+
 use super::{Expander, GPIOBank, Register, StandardExpanderInterface};
 
 impl<Ex> StandardExpanderInterface for Ex

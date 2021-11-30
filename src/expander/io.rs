@@ -2,9 +2,11 @@ use core::marker::PhantomData;
 
 use super::{Register, SyncExpander};
 
-use super::{mutex::ExpanderMutex, Expander};
+use super::Expander;
+use crate::ExpanderMutex;
 
-/// A wrapper struct to use an Expander as multiple instances of [`ExpanderInputPin`] or [`ExpanderOutputPin`] making the pins sync.
+/// A wrapper struct to make an Expander Sync.
+/// This Expander type can be used to generate [`crate::ExpanderInputPin`] or [`crate::ExpanderOutputPin`].
 pub struct IoExpander<Em, Ex>
 where
     Em: ExpanderMutex<Ex>,
@@ -14,7 +16,7 @@ where
 }
 
 impl<Em: ExpanderMutex<Ex>, Ex: Expander> IoExpander<Em, Ex> {
-    ///Creates a new IoExpander instance out of a ExpanderMutex
+    ///Creates a new IoExpander instance out of an Expander.
     pub fn new(expander: Ex) -> IoExpander<Em, Ex> {
         IoExpander {
             expander_mutex: Em::new(expander),

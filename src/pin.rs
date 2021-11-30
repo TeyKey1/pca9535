@@ -11,9 +11,6 @@ use super::Register;
 /// Single input device pin implementing [`InputPin`] and [`IoPin`] trait.
 ///
 /// The [`ExpanderInputPin`] instance can be used with other pieces of software using [`hal`].
-///
-/// # Multithreading
-/// The pins are not thread safe by default. This needs to be implemented by the user.
 pub struct ExpanderInputPin<'a, Io>
 where
     Io: SyncExpander,
@@ -26,9 +23,6 @@ where
 /// Single output device pin implementing [`OutputPin`] and [`IoPin`] trait.
 ///
 /// The [`ExpanderInputPin`] instance can be used with other pieces of software using [`hal`].
-///
-/// # Multithreading
-/// The pins are not thread safe by default. This needs to be implemented by the user.
 pub struct ExpanderOutputPin<'a, Io>
 where
     Io: SyncExpander,

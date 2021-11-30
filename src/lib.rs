@@ -13,11 +13,72 @@ On initialization all pins are configured as high impedance inputs. The PCA9535 
 The device uses 7Bit addressing and allows the hardware configuration of the first 3 address bits, allowing for up to 8 expanders on the same bus.
 
 ## General info
-The library uses the blocking I2C embedded-hal traits. Each implementation of [`expander::Expander`] owns the provided I2C instance, if multiple device access to the bus is required the user has to provide the code to make it work. No synchronization is done inside the library.
+The library uses the blocking I2C embedded-hal traits. Each implementation of [`Expander`] owns the provided I2C instance, if multiple device access to the bus is required the user has to provide the code to make it work. No synchronization is done inside the library.
 For this purpose it is recommended to use crates like [shared-bus](https://crates.io/crates/shared-bus)
 
 # Usage
-Usage
+This library can be used in multiple ways depending on the usecase and needs.
+
+## Operation types
+The device has two possible configurations on how i2c bus traffic is handled:
+
+### Immediate
+The immediate expander interface [`Pca9535Immediate`] issues a i2c bus transaction on each function call an state change of the expander. It does not make use of the open drain interrupt output of the device to reduce bus traffic and does not hold any state on the device registers.
+```rust
+use pca9535::Pca9535Immediate;
+
+let expander = Pca9535Immediate::new(i2c, address);
+```
+### Cached
+The cached expander interface [`Pca9535Cached`] stores the state of the devices registers internally in order to reduce the i2c bus traffic as much as much as possible. It relies on the open drain interrupt pin of the device to detect any changes to the registers. Thus the use of this hardware pin is mandatory for this interface.
+```rust
+use pca9535::Pca9535Cached;
+
+let expander_interrupt_pin = ...; //A HAL GPIO Input pin which is connected to the interrupt pin of the IO Expander
+let expander = Pca9535Cached::new(i2c, address, expander_interrupt_pin);
+```
+## Usage types
+Once the operation type has been determined there are two ways of interacting with the IO expander:
+
+### Standard Expander Interface
+Every [`Expander`] implements the [`StandardExpanderInterface`]. This interface offers various functions to interact with the expander. Those functions do not hold any state of wether the pins are currently configured as inputs or outputs. The user needs to ensure that the pins are in the desired configuration before calling other functions in order to get valid and expected results.
+```rust
+use pca9535::GPIOBank;
+use pca9535::StandardExpanderInterface;
+
+let mut expander = ...; //Either Immediate or Cached expander
+
+expander.pin_into_output(GPIOBank::Bank0, 3).unwrap();
+expander.pin_set_high(GPIOBank::Bank0, 3).unwrap();
+//and so on...
+```
+### Expander HAL Pins
+This is a special interface which offers the possibility to use the GPIO of the IO expander as [`hal`] pins. As this is a special interface which is sync and can be used across multiple threads etc. the operation types need to be wrapped into an [`IoExpander`] type.
+```rust
+use pca9535::IoExpander;
+use std::sync::Mutex;
+
+let expander = ...; //Either Immediate or Cached expander
+
+let io_expander = IoExpander<Mutex<_>, _> = IoExpander::new(expander); // Wrapped expander in std environment using Mutex as ExpanderMutex
+```
+By using this wrapper the expander gets automatically wrapped into an [`ExpanderMutex`] which ensures exclusive access to the expander and makes it [`Sync`]. Currently ExpanderMutex is only implemented for `std` environment. You can activate this implementation by enabling the "std" feature of this crate. For other architectures on bare metal etc. the ExpanderMutex trait can be implemented on any type which ensures exclusive access to the contained data. Once this is done the expander can be wrapped inside a IoExpander as described previously using the newly implemented ExpanderMutex trait.
+
+Now it is possible to generate either [`ExpanderInputPin`] or [`ExpanderOutputPin`] and manipulate the IO expander through those pins. They implement all the standard [`hal`] traits on GPIO pins and could theoretically also be used in other libraries requiring hal GPIO pins.
+```rust
+use pca9535::{ExpanderInputPin, ExpanderOutputPin};
+use pca9535::GPIOBank::{Bank0, Bank1};
+use pca9535::PinState;
+
+let io_expander = ...; // Wrapped expander
+
+let mut expander_pin_1_5 = ExpanderInputPin::new(&io_expander, Bank1, 5).unwrap();
+let mut expander_pin_0_2 = ExpanderOutputPin::new(&io_expander, Bank0, 2, PinState::Low).unwrap();
+
+expander_pin_0_2.set_high();
+expander_pin_1_5.into_output_pin(PinState::Low);
+//and so on...
+```
 */
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -25,208 +86,18 @@ Usage
 extern crate embedded_hal as hal;
 
 pub mod expander;
+pub mod mutex;
 pub mod pin;
 
 pub use expander::cached::Pca9535Cached;
 pub use expander::immediate::Pca9535Immediate;
-
+pub use expander::io::IoExpander;
+pub use expander::Expander;
+pub use expander::StandardExpanderInterface;
+pub use hal::digital::PinState;
+pub use mutex::ExpanderMutex;
 pub use pin::ExpanderInputPin;
 pub use pin::ExpanderOutputPin;
-
-pub use hal::digital::PinState;
-
-/*impl<I2C, E> Pca9535<I2C>
-where
-    I2C: Write<Error = E> + WriteRead<Error = E>,
-{
-    ///Creates a new instance of PCA9535 with provided address
-    pub fn new(addr: u8, i2c: I2C) -> Self {
-        Self {
-            address: addr,
-            i2c: i2c,
-        }
-    }
-
-    /// Drives given pin high.
-    ///
-    /// # Panics
-    /// The function will panic if the provided pin is not in the allowed range of 0-7
-    pub fn pin_set_high(&mut self, bank: GPIOBank, pin: u8) -> Result<(), E> {
-        assert!(pin < 8);
-
-        let register = match bank {
-            GPIOBank::Bank0 => Register::InputPort0,
-            GPIOBank::Bank1 => Register::InputPort1,
-        };
-
-        let mut reg_val: u8 = 0x00;
-
-        self.read_byte(register, &mut reg_val)?;
-
-        self.write_byte(register, reg_val | (0x01 << pin))
-    }
-
-    /// Drives given pin low.
-    ///
-    /// # Panics
-    /// The function will panic if the provided pin is not in the allowed range of 0-7
-    pub fn pin_set_low(&mut self, bank: GPIOBank, pin: u8) -> Result<(), E> {
-        assert!(pin < 8);
-
-        let register = match bank {
-            GPIOBank::Bank0 => Register::OutputPort0,
-            GPIOBank::Bank1 => Register::OutputPort1,
-        };
-
-        let mut reg_val: u8 = 0x00;
-
-        self.read_byte(register, &mut reg_val)?;
-
-        self.write_byte(register, reg_val & !(0x01 << pin))
-    }
-
-    /// Checks if input state of given pin is `high`. This function works with pins configured as inputs as well as outputs.
-    ///
-    /// The function result does not necessarily represent the logic level of the applied voltage at the given pin but the value inside the input register of the device. Which is `1` or `0` Depending on the current polarity inversion configuration of the pin.
-    ///
-    /// # Panics
-    /// The function will panic if the provided pin is not in the allowed range of 0-7
-    pub fn pin_is_high(&mut self, bank: GPIOBank, pin: u8) -> Result<bool, E> {
-        assert!(pin < 8);
-
-        let register = match bank {
-            GPIOBank::Bank0 => Register::InputPort0,
-            GPIOBank::Bank1 => Register::InputPort1,
-        };
-
-        let mut reg_val: u8 = 0x00;
-
-        self.read_byte(register, &mut reg_val)?;
-
-        match (reg_val >> pin) & 1 {
-            1 => Ok(true),
-            _ => Ok(false),
-        }
-    }
-
-    /// Checks if input state of given pin is `low`. This function works with pins configured as inputs as well as outputs.
-    ///
-    /// The function result does not necessarily represent the logic level of the applied voltage at the given pin but the value inside the input register of the device. Which is `1` or `0` Depending on the current polarity inversion configuration of the pin.
-    ///
-    /// # Panics
-    /// The function will panic if the provided pin is not in the allowed range of 0-7
-    pub fn pin_is_low(&mut self, bank: GPIOBank, pin: u8) -> Result<bool, E> {
-        assert!(pin < 8);
-
-        let register = match bank {
-            GPIOBank::Bank0 => Register::InputPort0,
-            GPIOBank::Bank1 => Register::InputPort1,
-        };
-
-        let mut reg_val: u8 = 0x00;
-
-        self.read_byte(register, &mut reg_val)?;
-
-        match (reg_val >> pin) & 1 {
-            1 => Ok(false),
-            _ => Ok(true),
-        }
-    }
-
-    /// Configures given pin as input.
-    ///
-    /// # Panics
-    /// The function will panic if the provided pin is not in the allowed range of 0-7
-    pub fn pin_into_input(&mut self, bank: GPIOBank, pin: u8) -> Result<(), E> {
-        assert!(pin < 8);
-
-        let register = match bank {
-            GPIOBank::Bank0 => Register::ConfigurationPort0,
-            GPIOBank::Bank1 => Register::ConfigurationPort1,
-        };
-
-        let mut reg_val: u8 = 0x00;
-
-        self.read_byte(register, &mut reg_val)?;
-
-        self.write_byte(register, reg_val | (0x01 << pin))
-    }
-
-    /// Configures given pin as output.
-    ///
-    /// # Panics
-    /// The function will panic if the provided pin is not in the allowed range of 0-7
-    pub fn pin_into_output(&mut self, bank: GPIOBank, pin: u8) -> Result<(), E> {
-        assert!(pin < 8);
-
-        let register = match bank {
-            GPIOBank::Bank0 => Register::ConfigurationPort0,
-            GPIOBank::Bank1 => Register::ConfigurationPort1,
-        };
-
-        let mut reg_val: u8 = 0x00;
-
-        self.read_byte(register, &mut reg_val)?;
-
-        self.write_byte(register, reg_val & !(0x01 << pin))
-    }
-
-    /// Sets the input polarity of the given pin to inverted.
-    ///
-    /// A logic high voltage applied at this input pin results in a `0` written to the devices input register and thus being registered as `low` by the driver.
-    ///
-    /// # Panics
-    /// The function will panic if the provided pin is not in the allowed range of 0-7
-    pub fn pin_inverse_polarity(&mut self, bank: GPIOBank, pin: u8) -> Result<(), E> {
-        assert!(pin < 8);
-
-        let register = match bank {
-            GPIOBank::Bank0 => Register::PolarityInversionPort0,
-            GPIOBank::Bank1 => Register::PolarityInversionPort1,
-        };
-
-        let mut reg_val: u8 = 0x00;
-
-        self.read_byte(register, &mut reg_val)?;
-
-        self.write_byte(register, reg_val | (0x01 << pin))
-    }
-
-    /// Sets the input polarity of the given pin to normal.
-    ///
-    /// A logic high voltage applied at an input pin results in a `1` written to the devices input register and thus being registered as `high` by the driver.
-    ///
-    /// # Panics
-    /// The function will panic if the provided pin is not in the allowed range of 0-7
-    pub fn pin_normal_polarity(&mut self, bank: GPIOBank, pin: u8) -> Result<(), E> {
-        assert!(pin < 8);
-
-        let register = match bank {
-            GPIOBank::Bank0 => Register::PolarityInversionPort0,
-            GPIOBank::Bank1 => Register::PolarityInversionPort1,
-        };
-
-        let mut reg_val: u8 = 0x00;
-
-        self.read_byte(register, &mut reg_val)?;
-
-        self.write_byte(register, reg_val & !(0x01 << pin))
-    }
-
-    /// Sets the input polarity of all pins to inverted.
-    ///
-    /// A logic high voltage applied at an input pin results in a `0` written to the devices input register and thus being registered as `low` by the driver.
-    pub fn inverse_polarity(&mut self) -> Result<(), E> {
-        self.write_halfword(Register::PolarityInversionPort0, 0xFFFF as u16)
-    }
-
-    /// Sets the input polarity of all pins to normal.
-    ///
-    /// A logic high voltage applied at an input pin results in a `1` written to the devices input register and thus being registered as `high` by the driver.
-    pub fn normal_polarity(&mut self) -> Result<(), E> {
-        self.write_halfword(Register::PolarityInversionPort0, 0x0 as u16)
-    }
-}*/
 
 /// The data registers of the device
 ///

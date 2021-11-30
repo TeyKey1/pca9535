@@ -4,9 +4,8 @@ use super::{GPIOBank, Register};
 
 pub mod cached;
 pub mod immediate;
-pub mod mutex;
+pub mod io;
 mod standard;
-pub mod sync;
 
 /// Trait for standard IO expanders which are not Sync
 pub trait Expander {
