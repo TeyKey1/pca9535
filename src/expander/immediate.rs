@@ -13,7 +13,7 @@ where
     i2c: I2C,
 }
 
-impl<I2C: Write + WriteRead> Pca9535Immediate<I2C>{
+impl<I2C: Write + WriteRead> Pca9535Immediate<I2C> {
     ///Creates a new immediate PCA9535 instance.
     ///
     /// # Panics
@@ -21,10 +21,7 @@ impl<I2C: Write + WriteRead> Pca9535Immediate<I2C>{
     pub fn new(i2c: I2C, address: u8) -> Self {
         assert!(address > 31 && address < 40);
 
-        Self {
-            address,
-            i2c,
-        }
+        Self { address, i2c }
     }
 }
 
