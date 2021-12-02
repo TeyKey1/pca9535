@@ -109,9 +109,13 @@ impl<I2C: Write + WriteRead, IP: InputPin> Expander for Pca9535Cached<I2C, IP> {
     /// This function only creates bus traffic in case the provided interrupt pin is held at a `low` voltage level at the time of the function call and the provided register is an input register. In that case the data is being read from the device, as the devices interrupt output indicates a data change. Otherwise the cached value is returned without causing any bus traffic.
     fn read_byte(&mut self, register: Register, buffer: &mut u8) -> Result<(), Self::Error> {
         if self.interrupt_pin.is_low().unwrap() && register.is_input() {
+            let mut buf = [0u8];
+
             self.i2c
-                .write_read(self.address, &[register as u8], &mut [*buffer])
+                .write_read(self.address, &[register as u8], &mut buf)
                 .map_err(Self::Error::from_write_read)?;
+
+            *buffer = buf[0];
         } else {
             *buffer = self.get_cached(register);
         }

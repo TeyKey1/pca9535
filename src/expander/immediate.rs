@@ -41,9 +41,13 @@ impl<I2C: Write + WriteRead> Expander for Pca9535Immediate<I2C> {
     ///
     /// Only use this function if you really have to. The crate provides simpler ways of interacting with the device for most usecases.
     fn read_byte(&mut self, register: Register, buffer: &mut u8) -> Result<(), Self::Error> {
+        let mut buf = [0u8];
         self.i2c
-            .write_read(self.address, &[register as u8], &mut [*buffer])
-            .map_err(Self::Error::from_write_read)
+            .write_read(self.address, &[register as u8], &mut buf)
+            .map_err(Self::Error::from_write_read)?;
+        
+        *buffer = buf[0];
+        Ok(())
     }
 
     /// Writes one halfword to given register
