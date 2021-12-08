@@ -233,8 +233,8 @@ impl<'a, Io: SyncExpander> OutputPin for ExpanderOutputPin<'a, Io> {
 
     fn set_high(&mut self) -> Result<(), Self::Error> {
         let register = match self.bank {
-            GPIOBank::Bank0 => Register::InputPort0,
-            GPIOBank::Bank1 => Register::InputPort1,
+            GPIOBank::Bank0 => Register::OutputPort0,
+            GPIOBank::Bank1 => Register::OutputPort1,
         };
 
         let mut reg_val: u8 = 0x00;

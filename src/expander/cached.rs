@@ -1,3 +1,5 @@
+use core::fmt::Debug;
+
 use hal::digital::blocking::InputPin;
 use hal::i2c::blocking::{Write, WriteRead};
 
@@ -50,9 +52,7 @@ impl<I2C: Write + WriteRead, IP: InputPin> Pca9535Cached<I2C, IP> {
         }
     }
 
-    pub fn init_cache(
-        &mut self,
-    ) -> Result<(), ExpanderError<<I2C as WriteRead>::Error, <I2C as Write>::Error>> {
+    pub fn init_cache(&mut self) -> Result<(), ExpanderError<I2C>> {
         todo!()
     }
 
@@ -83,8 +83,8 @@ impl<I2C: Write + WriteRead, IP: InputPin> Pca9535Cached<I2C, IP> {
     }
 }
 
-impl<I2C: Write + WriteRead, IP: InputPin> Expander for Pca9535Cached<I2C, IP> {
-    type Error = ExpanderError<<I2C as WriteRead>::Error, <I2C as Write>::Error>;
+impl<I2C: Write + WriteRead + Debug, IP: InputPin> Expander for Pca9535Cached<I2C, IP> {
+    type Error = ExpanderError<I2C>;
 
     /// Writes one byte to given register
     ///
@@ -95,7 +95,7 @@ impl<I2C: Write + WriteRead, IP: InputPin> Expander for Pca9535Cached<I2C, IP> {
     fn write_byte(&mut self, register: Register, data: u8) -> Result<(), Self::Error> {
         self.i2c
             .write(self.address, &[register as u8, data])
-            .map_err(Self::Error::from_write)?;
+            .map_err(|err| Self::Error::WriteError(err))?;
 
         self.set_cached(register, data);
         Ok(())
@@ -113,7 +113,7 @@ impl<I2C: Write + WriteRead, IP: InputPin> Expander for Pca9535Cached<I2C, IP> {
 
             self.i2c
                 .write_read(self.address, &[register as u8], &mut buf)
-                .map_err(Self::Error::from_write_read)?;
+                .map_err(|err| Self::Error::WriteReadError(err))?;
 
             *buffer = buf[0];
         } else {
@@ -138,7 +138,7 @@ impl<I2C: Write + WriteRead, IP: InputPin> Expander for Pca9535Cached<I2C, IP> {
                 self.address,
                 &[register as u8, (data >> 8) as u8, data as u8],
             )
-            .map_err(Self::Error::from_write)?;
+            .map_err(|err| Self::Error::WriteError(err))?;
 
         self.set_cached(register, (data >> 8) as u8);
         self.set_cached(register.get_neighbor(), data as u8);
@@ -161,7 +161,7 @@ impl<I2C: Write + WriteRead, IP: InputPin> Expander for Pca9535Cached<I2C, IP> {
         if self.interrupt_pin.is_low().unwrap() && register.is_input() {
             self.i2c
                 .write_read(self.address, &[register as u8], &mut reg_val)
-                .map_err(Self::Error::from_write_read)?;
+                .map_err(|err| Self::Error::WriteReadError(err))?;
 
             self.set_cached(register, reg_val[0]);
             self.set_cached(register.get_neighbor(), reg_val[1]);

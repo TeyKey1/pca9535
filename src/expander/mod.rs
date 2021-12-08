@@ -1,4 +1,5 @@
 use core::fmt::Debug;
+use hal::i2c::blocking::{Write, WriteRead};
 
 use super::{GPIOBank, Register};
 
@@ -44,17 +45,10 @@ pub trait StandardExpanderInterface {
 }
 
 #[derive(Debug)]
-pub enum ExpanderError<WR, W> {
-    WriteError(W),
-    WriteReadError(WR),
-}
-
-impl<WR, W> ExpanderError<WR, W> {
-    fn from_write_read(err: WR) -> Self {
-        Self::WriteReadError(err)
-    }
-
-    fn from_write(err: W) -> Self {
-        Self::WriteError(err)
-    }
+pub enum ExpanderError<I2C>
+where
+    I2C: Write + WriteRead,
+{
+    WriteError(<I2C as Write>::Error),
+    WriteReadError(<I2C as WriteRead>::Error),
 }
