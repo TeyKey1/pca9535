@@ -93,6 +93,7 @@ pub use expander::cached::Pca9535Cached;
 pub use expander::immediate::Pca9535Immediate;
 pub use expander::io::IoExpander;
 pub use expander::Expander;
+pub use expander::ExpanderError;
 pub use expander::StandardExpanderInterface;
 pub use hal::digital::PinState;
 pub use mutex::ExpanderMutex;
