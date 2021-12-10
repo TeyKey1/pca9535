@@ -30,14 +30,21 @@ where
 impl<I2C: Write + WriteRead, IP: InputPin> Pca9535Cached<I2C, IP> {
     ///Creates a new cached PCA9535 instance.
     ///
-    /// The cached registers are initialized to the devices default state.
+    /// # Cached registers
+    /// The init_defaults argument assumes the default values for all the registers of the device if set to `true` (Default register condition after device startup, see the device's documentation for more information). In that case no bus transaction is created to verify if this is actually the case on the device. Only use this option if you have not made any transactions with the device before creating this expander struct, otherwise you might encounter unexpected behavior of the device!
+    /// If the device was used before calling this function and should keep its state you should set init_defaults to `false`. This triggers a bus transaction to read out all the devices registers and caches the received values.
     ///
     /// # Panics
     /// If given device hardware address is outside of the permittable range of `32-39`.
-    pub fn new(i2c: I2C, address: u8, interrupt_pin: IP) -> Self {
+    pub fn new(
+        i2c: I2C,
+        address: u8,
+        interrupt_pin: IP,
+        init_defaults: bool,
+    ) -> Result<Self, ExpanderError<I2C>> {
         assert!(address > 31 && address < 40);
 
-        Self {
+        let mut expander = Self {
             address,
             i2c,
             interrupt_pin,
@@ -49,11 +56,56 @@ impl<I2C: Write + WriteRead, IP: InputPin> Pca9535Cached<I2C, IP> {
             polarity_inversion_port_1: 0x00,
             configuration_port_0: 0xFF,
             configuration_port_1: 0xFF,
+        };
+
+        if !init_defaults {
+            Self::init_cache(&mut expander)?;
         }
+
+        Ok(expander)
     }
 
-    pub fn init_cache(&mut self) -> Result<(), ExpanderError<I2C>> {
-        todo!()
+    /// Initializes the device's cache by reading out all the required registers of the device.
+    fn init_cache(expander: &mut Self) -> Result<(), ExpanderError<I2C>> {
+        let mut buf: [u8; 2] = [0x00, 0x00];
+
+        expander
+            .i2c
+            .write_read(
+                expander.address,
+                &[Register::ConfigurationPort0 as u8],
+                &mut buf,
+            )
+            .map_err(ExpanderError::<I2C>::WriteReadError)?;
+        expander.configuration_port_0 = buf[0];
+        expander.configuration_port_1 = buf[1];
+
+        expander
+            .i2c
+            .write_read(expander.address, &[Register::InputPort0 as u8], &mut buf)
+            .map_err(ExpanderError::<I2C>::WriteReadError)?;
+        expander.input_port_0 = buf[0];
+        expander.input_port_1 = buf[1];
+
+        expander
+            .i2c
+            .write_read(expander.address, &[Register::OutputPort0 as u8], &mut buf)
+            .map_err(ExpanderError::<I2C>::WriteReadError)?;
+        expander.output_port_0 = buf[0];
+        expander.output_port_1 = buf[1];
+
+        expander
+            .i2c
+            .write_read(
+                expander.address,
+                &[Register::PolarityInversionPort0 as u8],
+                &mut buf,
+            )
+            .map_err(ExpanderError::<I2C>::WriteReadError)?;
+        expander.polarity_inversion_port_0 = buf[0];
+        expander.polarity_inversion_port_1 = buf[1];
+
+        Ok(())
     }
 
     fn get_cached(&self, register: Register) -> u8 {
@@ -95,7 +147,7 @@ impl<I2C: Write + WriteRead + Debug, IP: InputPin> Expander for Pca9535Cached<I2
     fn write_byte(&mut self, register: Register, data: u8) -> Result<(), Self::Error> {
         self.i2c
             .write(self.address, &[register as u8, data])
-            .map_err(|err| Self::Error::WriteError(err))?;
+            .map_err(Self::Error::WriteError)?;
 
         self.set_cached(register, data);
         Ok(())
@@ -113,7 +165,7 @@ impl<I2C: Write + WriteRead + Debug, IP: InputPin> Expander for Pca9535Cached<I2
 
             self.i2c
                 .write_read(self.address, &[register as u8], &mut buf)
-                .map_err(|err| Self::Error::WriteReadError(err))?;
+                .map_err(Self::Error::WriteReadError)?;
 
             *buffer = buf[0];
         } else {
@@ -138,7 +190,7 @@ impl<I2C: Write + WriteRead + Debug, IP: InputPin> Expander for Pca9535Cached<I2
                 self.address,
                 &[register as u8, (data >> 8) as u8, data as u8],
             )
-            .map_err(|err| Self::Error::WriteError(err))?;
+            .map_err(Self::Error::WriteError)?;
 
         self.set_cached(register, (data >> 8) as u8);
         self.set_cached(register.get_neighbor(), data as u8);
@@ -161,7 +213,7 @@ impl<I2C: Write + WriteRead + Debug, IP: InputPin> Expander for Pca9535Cached<I2
         if self.interrupt_pin.is_low().unwrap() && register.is_input() {
             self.i2c
                 .write_read(self.address, &[register as u8], &mut reg_val)
-                .map_err(|err| Self::Error::WriteReadError(err))?;
+                .map_err(Self::Error::WriteReadError)?;
 
             self.set_cached(register, reg_val[0]);
             self.set_cached(register.get_neighbor(), reg_val[1]);

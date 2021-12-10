@@ -36,7 +36,7 @@ impl<I2C: Write + WriteRead + Debug> Expander for Pca9535Immediate<I2C> {
     fn write_byte(&mut self, register: Register, data: u8) -> Result<(), Self::Error> {
         self.i2c
             .write(self.address, &[register as u8, data])
-            .map_err(|err| Self::Error::WriteError(err))
+            .map_err(Self::Error::WriteError)
     }
 
     /// Reads one byte of given register
@@ -47,7 +47,7 @@ impl<I2C: Write + WriteRead + Debug> Expander for Pca9535Immediate<I2C> {
 
         self.i2c
             .write_read(self.address, &[register as u8], &mut buf)
-            .map_err(|err| Self::Error::WriteReadError(err))?;
+            .map_err(Self::Error::WriteReadError)?;
 
         *buffer = buf[0];
 
@@ -66,7 +66,7 @@ impl<I2C: Write + WriteRead + Debug> Expander for Pca9535Immediate<I2C> {
                 self.address,
                 &[register as u8, (data >> 8) as u8, data as u8],
             )
-            .map_err(|err| Self::Error::WriteError(err))
+            .map_err(Self::Error::WriteError)
     }
 
     /// Reads one halfword of given register
@@ -80,7 +80,7 @@ impl<I2C: Write + WriteRead + Debug> Expander for Pca9535Immediate<I2C> {
 
         self.i2c
             .write_read(self.address, &[register as u8], &mut reg_val)
-            .map_err(|err| Self::Error::WriteReadError(err))?;
+            .map_err(Self::Error::WriteReadError)?;
 
         *buffer = (reg_val[0] as u16) << 8 | reg_val[1] as u16;
 

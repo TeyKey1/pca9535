@@ -35,7 +35,7 @@ The cached expander interface [`Pca9535Cached`] stores the state of the devices 
 use pca9535::Pca9535Cached;
 
 let expander_interrupt_pin = ...; //A HAL GPIO Input pin which is connected to the interrupt pin of the IO Expander
-let expander = Pca9535Cached::new(i2c, address, expander_interrupt_pin);
+let expander = Pca9535Cached::new(i2c, address, expander_interrupt_pin, true); // create cached expander and initialize cache to defaults
 ```
 ## Usage types
 Once the operation type has been determined there are two ways of interacting with the IO expander:
@@ -50,10 +50,10 @@ let mut expander = ...; //Either Immediate or Cached expander
 
 expander.pin_into_output(GPIOBank::Bank0, 3).unwrap();
 expander.pin_set_high(GPIOBank::Bank0, 3).unwrap();
-//and so on...
+// and so on...
 ```
 ### Expander HAL Pins
-This is a special interface which offers the possibility to use the GPIO of the IO expander as [`hal`] pins. As this is a special interface which is sync and can be used across multiple threads etc. the operation types need to be wrapped into an [`IoExpander`] type.
+This interface offers the possibility to use the GPIO of the IO expander as [`hal`] pins, either to use for other [`hal`] librariers or just as a standardized way to handle GPIOs. As this is a special interface which is sync and can be used across multiple threads etc. the operation types need to be wrapped into an [`IoExpander`] type.
 ```rust
 use pca9535::IoExpander;
 use std::sync::Mutex;
@@ -77,7 +77,7 @@ let mut expander_pin_0_2 = ExpanderOutputPin::new(&io_expander, Bank0, 2, PinSta
 
 expander_pin_0_2.set_high();
 expander_pin_1_5.into_output_pin(PinState::Low);
-//and so on...
+// and so on...
 ```
 */
 
@@ -153,7 +153,7 @@ pub enum Register {
 }
 
 impl Register {
-    ///Return the other pair member of the given register
+    /// Return the other pair member of the given register
     fn get_neighbor(&self) -> Register {
         match self {
             Self::InputPort0 => Self::InputPort1,
@@ -167,7 +167,7 @@ impl Register {
         }
     }
 
-    //Returns true if register is an input register
+    /// Returns true if register is an input register
     fn is_input(&self) -> bool {
         matches!(self, Self::InputPort0 | Self::InputPort1)
     }

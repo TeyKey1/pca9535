@@ -16,7 +16,7 @@ where
 }
 
 impl<Em: ExpanderMutex<Ex>, Ex: Expander> IoExpander<Em, Ex> {
-    ///Creates a new IoExpander instance out of an Expander.
+    /// Creates a new IoExpander instance out of an Expander.
     pub fn new(expander: Ex) -> IoExpander<Em, Ex> {
         IoExpander {
             expander_mutex: Em::new(expander),
