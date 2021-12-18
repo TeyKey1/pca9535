@@ -221,7 +221,7 @@ impl<I2C: Write + WriteRead + Debug, IP: InputPin> Expander for Pca9535Cached<I2
             *buffer = (reg_val[0] as u16) << 8 | reg_val[1] as u16;
         } else {
             *buffer = (self.get_cached(register) as u16) << 8
-                & self.get_cached(register.get_neighbor()) as u16;
+                | self.get_cached(register.get_neighbor()) as u16;
         }
 
         Ok(())
