@@ -167,6 +167,8 @@ impl<I2C: Write + WriteRead + Debug, IP: InputPin> Expander for Pca9535Cached<I2
                 .write_read(self.address, &[register as u8], &mut buf)
                 .map_err(Self::Error::WriteReadError)?;
 
+            self.set_cached(register, buf[0]);
+
             *buffer = buf[0];
         } else {
             *buffer = self.get_cached(register);
