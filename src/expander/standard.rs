@@ -16,8 +16,8 @@ where
         assert!(pin < 8);
 
         let register = match bank {
-            GPIOBank::Bank0 => Register::InputPort0,
-            GPIOBank::Bank1 => Register::InputPort1,
+            GPIOBank::Bank0 => Register::OutputPort0,
+            GPIOBank::Bank1 => Register::OutputPort1,
         };
 
         let mut reg_val: u8 = 0x00;
