@@ -2,6 +2,8 @@ use core::fmt::Debug;
 
 use hal::i2c::blocking::{Write, WriteRead};
 
+use crate::StandardExpanderInterface;
+
 use super::Expander;
 use super::ExpanderError;
 use super::Register;
@@ -86,4 +88,8 @@ impl<I2C: Write + WriteRead + Debug> Expander for Pca9535Immediate<I2C> {
 
         Ok(())
     }
+}
+
+impl<I2C: Write + WriteRead + Debug> StandardExpanderInterface for Pca9535Immediate<I2C> {
+    type Error = ExpanderError<I2C>;
 }
