@@ -266,7 +266,15 @@ impl<I2C: Write + WriteRead + Debug, IP: InputPin> StandardExpanderInterface
         self.write_byte(register, reg_val | (0x01 << pin))?;
 
         if (reg_val >> pin) & 0x01 == 0 {
-            self.set_cached(register, (0x01 << pin) ^ self.get_cached(register));
+            let input_register = match bank {
+                GPIOBank::Bank0 => Register::InputPort0,
+                GPIOBank::Bank1 => Register::InputPort1,
+            };
+
+            self.set_cached(
+                input_register,
+                (0x01 << pin) ^ self.get_cached(input_register),
+            );
         }
 
         Ok(())
@@ -300,7 +308,15 @@ impl<I2C: Write + WriteRead + Debug, IP: InputPin> StandardExpanderInterface
         self.write_byte(register, reg_val & !(0x01 << pin))?;
 
         if (reg_val >> pin) & 0x01 == 1 {
-            self.set_cached(register, (0x01 << pin) ^ self.get_cached(register));
+            let input_register = match bank {
+                GPIOBank::Bank0 => Register::InputPort0,
+                GPIOBank::Bank1 => Register::InputPort1,
+            };
+
+            self.set_cached(
+                input_register,
+                (0x01 << pin) ^ self.get_cached(input_register),
+            );
         }
 
         Ok(())
