@@ -138,6 +138,7 @@ mod immediate {
             rpi_gpio.out1_0.set_high();
 
             assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap(), true);
+            assert_eq!(expander.pin_is_low(GPIOBank::Bank1, 0).unwrap(), false);
         }
 
         #[test]
@@ -149,6 +150,7 @@ mod immediate {
 
             rpi_gpio.out1_0.set_high();
 
+            assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap(), true);
             assert_eq!(expander.pin_is_low(GPIOBank::Bank1, 0).unwrap(), false);
         }
 
@@ -175,7 +177,7 @@ mod immediate {
 
             expander.pin_set_low(GPIOBank::Bank1, 6).unwrap();
 
-            assert_eq!(rpi_gpio.in1_6.is_high(), true);
+            assert_eq!(rpi_gpio.in1_6.is_low(), true);
         }
 
         #[test]
