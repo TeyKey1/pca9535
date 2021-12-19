@@ -127,51 +127,7 @@ mod immediate {
         use crate::RPI_GPIO;
 
         use pca9535::{GPIOBank, StandardExpanderInterface};
-        #[test]
-        /*fn it_adds_two() {
-            println!("Checking PCA9535 input and polarity inversion");
 
-            /*expander.pin_into_input(Bank1, 0).unwrap();
-
-            rpi_gpio.out1_0.set_high();
-            thread::sleep(time::Duration::from_millis(80));
-
-            assert_eq!(expander.pin_is_high(Bank1, 0).unwrap(), true);
-            assert_eq!(expander.pin_is_low(Bank1, 0).unwrap(), false);
-
-            expander.pin_inverse_polarity(Bank1, 0).unwrap();
-
-            assert_eq!(expander.pin_is_high(Bank1, 0).unwrap(), false);
-            assert_eq!(expander.pin_is_low(Bank1, 0).unwrap(), true);
-
-            expander.pin_normal_polarity(Bank1, 0).unwrap();
-
-            rpi_gpio.out1_0.set_low();
-            thread::sleep(time::Duration::from_millis(80));
-
-            assert_eq!(expander.pin_is_high(Bank1, 0).unwrap(), false);
-            assert_eq!(expander.pin_is_low(Bank1, 0).unwrap(), true);
-
-            expander.pin_inverse_polarity(Bank1, 0).unwrap();
-
-            assert_eq!(expander.pin_is_high(Bank1, 0).unwrap(), true);
-            assert_eq!(expander.pin_is_low(Bank1, 0).unwrap(), false);
-
-            expander.pin_normal_polarity(Bank1, 0).unwrap();
-
-            println!("check PCA9535 output");
-
-            expander.pin_into_output(Bank1, 6).unwrap();
-            expander.pin_set_low(Bank1, 6).unwrap();
-
-            expander.pin_set_high(Bank1, 6).unwrap();
-
-            assert_eq!(rpi_gpio.in1_6.is_high(), true);
-
-            expander.pin_set_low(Bank1, 6).unwrap();
-
-            assert_eq!(rpi_gpio.in1_6.is_low(), true);*/
-        }*/
         #[test]
         fn input_pin_is_high() {
             let expander = &mut *EXPANDER.lock().unwrap();
@@ -194,6 +150,91 @@ mod immediate {
             rpi_gpio.out1_0.set_high();
 
             assert_eq!(expander.pin_is_low(GPIOBank::Bank1, 0).unwrap(), false);
+        }
+
+        #[test]
+        fn output_high() {
+            let expander = &mut *EXPANDER.lock().unwrap();
+            let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
+
+            expander.pin_into_output(GPIOBank::Bank1, 6).unwrap();
+            expander.pin_set_low(GPIOBank::Bank1, 6).unwrap();
+
+            expander.pin_set_high(GPIOBank::Bank1, 6).unwrap();
+
+            assert_eq!(rpi_gpio.in1_6.is_high(), true);
+        }
+
+        #[test]
+        fn output_low() {
+            let expander = &mut *EXPANDER.lock().unwrap();
+            let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
+
+            expander.pin_into_output(GPIOBank::Bank1, 6).unwrap();
+            expander.pin_set_high(GPIOBank::Bank1, 6).unwrap();
+
+            expander.pin_set_low(GPIOBank::Bank1, 6).unwrap();
+
+            assert_eq!(rpi_gpio.in1_6.is_high(), true);
+        }
+
+        #[test]
+        fn input_polarity_single() {
+            let expander = &mut *EXPANDER.lock().unwrap();
+            let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
+
+            expander.pin_into_input(GPIOBank::Bank1, 0).unwrap();
+            rpi_gpio.out1_0.set_high();
+
+            expander.pin_inverse_polarity(GPIOBank::Bank1, 0).unwrap();
+
+            assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap(), false);
+
+            expander.pin_normal_polarity(GPIOBank::Bank1, 0).unwrap();
+
+            assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap(), true);
+
+            rpi_gpio.out1_0.set_low();
+
+            expander.pin_inverse_polarity(GPIOBank::Bank1, 0).unwrap();
+
+            assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap(), true);
+
+            expander.pin_normal_polarity(GPIOBank::Bank1, 0).unwrap();
+
+            assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap(), false);
+        }
+
+        fn input_polarity_all() {
+            let expander = &mut *EXPANDER.lock().unwrap();
+            let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
+
+            expander.pin_into_input(GPIOBank::Bank1, 0).unwrap();
+            expander.pin_into_input(GPIOBank::Bank1, 1).unwrap();
+            rpi_gpio.out1_0.set_high();
+            rpi_gpio.out1_1.set_high();
+
+            expander.inverse_polarity().unwrap();
+
+            assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap(), false);
+            assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 1).unwrap(), false);
+
+            expander.normal_polarity().unwrap();
+
+            assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap(), true);
+            assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 1).unwrap(), true);
+
+            rpi_gpio.out1_0.set_low();
+
+            expander.inverse_polarity().unwrap();
+
+            assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap(), true);
+            assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 1).unwrap(), true);
+
+            expander.normal_polarity().unwrap();
+
+            assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap(), false);
+            assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 1).unwrap(), false);
         }
     }
 
