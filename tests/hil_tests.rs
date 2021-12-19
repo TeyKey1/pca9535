@@ -207,6 +207,7 @@ mod immediate {
             assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap(), false);
         }
 
+        #[test]
         fn input_polarity_all() {
             let expander = &mut *EXPANDER.lock().unwrap();
             let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
