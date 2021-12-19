@@ -3,8 +3,11 @@ use core::fmt::Debug;
 use hal::digital::blocking::InputPin;
 use hal::i2c::blocking::{Write, WriteRead};
 
+use crate::StandardExpanderInterface;
+
 use super::Expander;
 use super::ExpanderError;
+use super::GPIOBank;
 use super::Register;
 
 #[derive(Debug)]
@@ -225,6 +228,128 @@ impl<I2C: Write + WriteRead + Debug, IP: InputPin> Expander for Pca9535Cached<I2
             *buffer = (self.get_cached(register) as u16) << 8
                 | self.get_cached(register.get_neighbor()) as u16;
         }
+
+        Ok(())
+    }
+}
+
+impl<I2C: Write + WriteRead + Debug, IP: InputPin> StandardExpanderInterface
+    for Pca9535Cached<I2C, IP>
+{
+    type Error = ExpanderError<I2C>;
+
+    /// Sets the input polarity of the given pin to inverted.
+    ///
+    /// A logic high voltage applied at this input pin results in a `0` written to the devices input register and thus being registered as `low` by the driver.
+    ///
+    /// # Cached
+    /// As the IO Expander does not trigger an interrupt once the polarity inversion is changed on a pin configured as an input, the [`Pca9535Cached`] needs a special implementation of this function in order to ensure that the cache stays up to date.
+    ///
+    /// # Panics
+    /// The function will panic if the provided pin is not in the allowed range of 0-7
+    fn pin_inverse_polarity(
+        &mut self,
+        bank: GPIOBank,
+        pin: u8,
+    ) -> Result<(), <Self as Expander>::Error> {
+        assert!(pin < 8);
+
+        let register = match bank {
+            GPIOBank::Bank0 => Register::PolarityInversionPort0,
+            GPIOBank::Bank1 => Register::PolarityInversionPort1,
+        };
+
+        let mut reg_val: u8 = 0x00;
+
+        self.read_byte(register, &mut reg_val)?;
+
+        self.write_byte(register, reg_val | (0x01 << pin))?;
+
+        if (reg_val >> pin) & 0x01 == 0 {
+            self.set_cached(register, (0x01 << pin) ^ self.get_cached(register));
+        }
+
+        Ok(())
+    }
+
+    /// Sets the input polarity of the given pin to normal.
+    ///
+    /// A logic high voltage applied at an input pin results in a `1` written to the devices input register and thus being registered as `high` by the driver.
+    ///
+    /// # Cached
+    /// As the IO Expander does not trigger an interrupt once the polarity inversion is changed on a pin configured as an input, the [`Pca9535Cached`] needs a special implementation of this function in order to ensure that the cache stays up to date.
+    ///
+    /// # Panics
+    /// The function will panic if the provided pin is not in the allowed range of 0-7
+    fn pin_normal_polarity(
+        &mut self,
+        bank: GPIOBank,
+        pin: u8,
+    ) -> Result<(), <Self as Expander>::Error> {
+        assert!(pin < 8);
+
+        let register = match bank {
+            GPIOBank::Bank0 => Register::PolarityInversionPort0,
+            GPIOBank::Bank1 => Register::PolarityInversionPort1,
+        };
+
+        let mut reg_val: u8 = 0x00;
+
+        self.read_byte(register, &mut reg_val)?;
+
+        self.write_byte(register, reg_val & !(0x01 << pin))?;
+
+        if (reg_val >> pin) & 0x01 == 1 {
+            self.set_cached(register, (0x01 << pin) ^ self.get_cached(register));
+        }
+
+        Ok(())
+    }
+
+    /// Sets the input polarity of all pins to inverted.
+    ///
+    /// A logic high voltage applied at an input pin results in a `0` written to the devices input register and thus being registered as `low` by the driver.
+    ///
+    /// # Cached
+    /// As the IO Expander does not trigger an interrupt once the polarity inversion is changed on a pin configured as an input, the [`Pca9535Cached`] needs a special implementation of this function in order to ensure that the cache stays up to date.
+    fn inverse_polarity(&mut self) -> Result<(), <Self as Expander>::Error> {
+        let mut reg_val: u16 = 0;
+        self.read_halfword(Register::PolarityInversionPort0, &mut reg_val)?;
+
+        self.write_halfword(Register::PolarityInversionPort0, 0xFFFF_u16)?;
+
+        self.set_cached(
+            Register::InputPort0,
+            (!reg_val >> 8) as u8 ^ self.get_cached(Register::InputPort0),
+        );
+        self.set_cached(
+            Register::InputPort1,
+            !reg_val as u8 ^ self.get_cached(Register::InputPort1),
+        );
+
+        Ok(())
+    }
+
+    /// Sets the input polarity of all pins to normal.
+    ///
+    /// A logic high voltage applied at an input pin results in a `1` written to the devices input register and thus being registered as `high` by the driver.
+    ///
+    /// # Cached
+    /// As the IO Expander does not trigger an interrupt once the polarity inversion is changed on a pin configured as an input, the [`Pca9535Cached`] needs a special implementation of this function in order to ensure that the cache stays up to date.
+    fn normal_polarity(&mut self) -> Result<(), <Self as Expander>::Error> {
+        let mut reg_val: u16 = 0;
+        self.read_halfword(Register::PolarityInversionPort0, &mut reg_val)?;
+
+        self.write_halfword(Register::PolarityInversionPort0, 0x0_u16)?;
+
+        self.set_cached(
+            Register::InputPort0,
+            (reg_val >> 8) as u8 ^ self.get_cached(Register::InputPort0),
+        );
+        self.set_cached(
+            Register::InputPort1,
+            reg_val as u8 ^ self.get_cached(Register::InputPort1),
+        );
 
         Ok(())
     }

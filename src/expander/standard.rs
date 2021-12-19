@@ -1,18 +1,14 @@
 //! Implements the standard interface for all types implementing [`Expander`] trait.
 
-use super::{Expander, GPIOBank, Register, StandardExpanderInterface};
+use super::{Expander, GPIOBank, Register};
 
-impl<Ex> StandardExpanderInterface for Ex
-where
-    Ex: Expander,
-{
-    type Error = <Ex as Expander>::Error;
+/// Standard expander interface not using [`hal`].
+///
+/// This interface does not track the state of the pins! Therefore the user needs to ensure the pins are in input or output configuration before proceeding to call functions related to input or output pins. Otherwise the results of those functions might not cause the expected behavior of the device.
+pub trait StandardExpanderInterface: Expander {
+    type Error: core::fmt::Debug;
 
-    /// Drives given pin high.
-    ///
-    /// # Panics
-    /// The function will panic if the provided pin is not in the allowed range of 0-7
-    fn pin_set_high(&mut self, bank: GPIOBank, pin: u8) -> Result<(), Self::Error> {
+    fn pin_set_high(&mut self, bank: GPIOBank, pin: u8) -> Result<(), <Self as Expander>::Error> {
         assert!(pin < 8);
 
         let register = match bank {
@@ -31,7 +27,7 @@ where
     ///
     /// # Panics
     /// The function will panic if the provided pin is not in the allowed range of 0-7
-    fn pin_set_low(&mut self, bank: GPIOBank, pin: u8) -> Result<(), Self::Error> {
+    fn pin_set_low(&mut self, bank: GPIOBank, pin: u8) -> Result<(), <Self as Expander>::Error> {
         assert!(pin < 8);
 
         let register = match bank {
@@ -52,7 +48,7 @@ where
     ///
     /// # Panics
     /// The function will panic if the provided pin is not in the allowed range of 0-7
-    fn pin_is_high(&mut self, bank: GPIOBank, pin: u8) -> Result<bool, Self::Error> {
+    fn pin_is_high(&mut self, bank: GPIOBank, pin: u8) -> Result<bool, <Self as Expander>::Error> {
         assert!(pin < 8);
 
         let register = match bank {
@@ -76,7 +72,7 @@ where
     ///
     /// # Panics
     /// The function will panic if the provided pin is not in the allowed range of 0-7
-    fn pin_is_low(&mut self, bank: GPIOBank, pin: u8) -> Result<bool, Self::Error> {
+    fn pin_is_low(&mut self, bank: GPIOBank, pin: u8) -> Result<bool, <Self as Expander>::Error> {
         assert!(pin < 8);
 
         let register = match bank {
@@ -98,7 +94,7 @@ where
     ///
     /// # Panics
     /// The function will panic if the provided pin is not in the allowed range of 0-7
-    fn pin_into_input(&mut self, bank: GPIOBank, pin: u8) -> Result<(), Self::Error> {
+    fn pin_into_input(&mut self, bank: GPIOBank, pin: u8) -> Result<(), <Self as Expander>::Error> {
         assert!(pin < 8);
 
         let register = match bank {
@@ -117,7 +113,11 @@ where
     ///
     /// # Panics
     /// The function will panic if the provided pin is not in the allowed range of 0-7
-    fn pin_into_output(&mut self, bank: GPIOBank, pin: u8) -> Result<(), Self::Error> {
+    fn pin_into_output(
+        &mut self,
+        bank: GPIOBank,
+        pin: u8,
+    ) -> Result<(), <Self as Expander>::Error> {
         assert!(pin < 8);
 
         let register = match bank {
@@ -138,7 +138,11 @@ where
     ///
     /// # Panics
     /// The function will panic if the provided pin is not in the allowed range of 0-7
-    fn pin_inverse_polarity(&mut self, bank: GPIOBank, pin: u8) -> Result<(), Self::Error> {
+    fn pin_inverse_polarity(
+        &mut self,
+        bank: GPIOBank,
+        pin: u8,
+    ) -> Result<(), <Self as Expander>::Error> {
         assert!(pin < 8);
 
         let register = match bank {
@@ -159,7 +163,11 @@ where
     ///
     /// # Panics
     /// The function will panic if the provided pin is not in the allowed range of 0-7
-    fn pin_normal_polarity(&mut self, bank: GPIOBank, pin: u8) -> Result<(), Self::Error> {
+    fn pin_normal_polarity(
+        &mut self,
+        bank: GPIOBank,
+        pin: u8,
+    ) -> Result<(), <Self as Expander>::Error> {
         assert!(pin < 8);
 
         let register = match bank {
@@ -177,14 +185,14 @@ where
     /// Sets the input polarity of all pins to inverted.
     ///
     /// A logic high voltage applied at an input pin results in a `0` written to the devices input register and thus being registered as `low` by the driver.
-    fn inverse_polarity(&mut self) -> Result<(), Self::Error> {
+    fn inverse_polarity(&mut self) -> Result<(), <Self as Expander>::Error> {
         self.write_halfword(Register::PolarityInversionPort0, 0xFFFF_u16)
     }
 
     /// Sets the input polarity of all pins to normal.
     ///
     /// A logic high voltage applied at an input pin results in a `1` written to the devices input register and thus being registered as `high` by the driver.
-    fn normal_polarity(&mut self) -> Result<(), Self::Error> {
+    fn normal_polarity(&mut self) -> Result<(), <Self as Expander>::Error> {
         self.write_halfword(Register::PolarityInversionPort0, 0x0_u16)
     }
 }
