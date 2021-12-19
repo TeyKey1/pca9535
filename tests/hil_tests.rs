@@ -232,12 +232,12 @@ mod immediate {
             expander.inverse_polarity().unwrap();
 
             assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap(), true);
-            assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 1).unwrap(), true);
+            assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 1).unwrap(), false);
 
             expander.normal_polarity().unwrap();
 
             assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap(), false);
-            assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 1).unwrap(), false);
+            assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 1).unwrap(), true);
         }
     }
 
