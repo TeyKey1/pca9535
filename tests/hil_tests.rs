@@ -1,6 +1,6 @@
 extern crate embedded_hal;
 extern crate lazy_static;
-extern crate pca9535;
+extern crate pca9535; //How to nable feature "std" of this crate which is being tested?
 extern crate rppal;
 extern crate shared_bus;
 
@@ -8,6 +8,8 @@ use lazy_static::lazy_static;
 use shared_bus::BusManager;
 use std::sync::Mutex;
 
+use pca9535::expander::SyncExpander;
+use pca9535::{ExpanderInputPin, ExpanderOutputPin};
 use rppal::gpio::{Gpio, InputPin, OutputPin};
 use rppal::i2c::I2c;
 
@@ -55,7 +57,7 @@ struct RpiGPIO {
     in1_7: InputPin,
 }
 
-/*struct Pca9535GPIO<'a, T>
+struct Pca9535GPIO<'a, T>
 where
     T: SyncExpander,
 {
@@ -63,8 +65,9 @@ where
     in0_4: ExpanderInputPin<'a, T>,
     out0_7: ExpanderOutputPin<'a, T>,
     out1_5: ExpanderOutputPin<'a, T>,
-}*/
+}
 
+#[cfg(test)]
 mod immediate {
     use crate::{lazy_static::lazy_static, ADDR, I2C_BUS};
 
@@ -122,6 +125,7 @@ mod immediate {
             .unwrap();
     }
 
+    #[cfg(test)]
     mod standard {
         use super::EXPANDER;
         use crate::RPI_GPIO;
@@ -241,9 +245,11 @@ mod immediate {
         }
     }
 
+    #[cfg(test)]
     mod pin {}
 }
 
+#[cfg(test)]
 mod cached {
     use crate::{lazy_static::lazy_static, ADDR, I2C_BUS, RPI_GPIO};
 
@@ -311,6 +317,7 @@ mod cached {
             .unwrap();
     }
 
+    #[cfg(test)]
     mod standard {
         use super::EXPANDER;
         use crate::RPI_GPIO;
@@ -436,7 +443,72 @@ mod cached {
         }
     }
 
+    #[cfg(test)]
     mod pin {
+        use crate::{lazy_static::lazy_static, Pca9535GPIO, ADDR, I2C_BUS, RPI_GPIO};
+
         use super::EXPANDER;
+
+        use pca9535::{
+            expander::SyncExpander, ExpanderInputPin, ExpanderOutputPin, GPIOBank, IoExpander,
+            Pca9535Cached, PinState,
+        };
+        use rppal::{
+            gpio::{Gpio, InputPin},
+            i2c::I2c,
+        };
+        use shared_bus::I2cProxy;
+        use std::sync::Mutex;
+
+        lazy_static! {
+            static ref IO_EXPANDER: IoExpander<
+                Mutex<Pca9535Cached<I2cProxy<'static, Mutex<I2c>>, InputPin>>,
+                Pca9535Cached<I2cProxy<'static, Mutex<I2c>>, InputPin>,
+            > = {
+                let gpio = Gpio::new().unwrap();
+                let i2c_bus = *I2C_BUS.lock().unwrap();
+                let expander = Pca9535Cached::new(
+                    i2c_bus.acquire_i2c(),
+                    ADDR,
+                    gpio.get(6).unwrap().into_input(),
+                    false,
+                )
+                .unwrap();
+
+                let exp = IoExpander::new(expander);
+
+                &exp.write_halfword(pca9535::Register::ConfigurationPort0, 0x00);
+
+                exp
+            };
+            static ref PCA9535_GPIO: Pca9535GPIO<
+                'static,
+                IoExpander<
+                    Mutex<Pca9535Cached<I2cProxy<'static, Mutex<I2c>>, InputPin>>,
+                    Pca9535Cached<I2cProxy<'static, Mutex<I2c>>, InputPin>,
+                >,
+            > = {
+                Pca9535GPIO {
+                    in0_3: ExpanderInputPin::new(&*IO_EXPANDER, GPIOBank::Bank0, 3).unwrap(),
+                    in0_4: ExpanderInputPin::new(&*IO_EXPANDER, GPIOBank::Bank0, 4).unwrap(),
+                    out0_7: ExpanderOutputPin::new(
+                        &*IO_EXPANDER,
+                        GPIOBank::Bank0,
+                        7,
+                        PinState::High,
+                    )
+                    .unwrap(),
+                    out1_5: ExpanderOutputPin::new(
+                        &*IO_EXPANDER,
+                        GPIOBank::Bank1,
+                        5,
+                        PinState::Low,
+                    )
+                    .unwrap(),
+                }
+            };
+        }
     }
 }
+
+// IoExpander<Mutex<Pca9535Cached<I2cProxy<Mutex<I2c>>, InputPin>>, Pca9535Cached<I2cProxy<Mutex<I2c>

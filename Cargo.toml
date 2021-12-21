@@ -17,6 +17,7 @@ std = []
 embedded-hal = "=1.0.0-alpha.5"
 
 [dev-dependencies]
+pca9535 = { path = ".", features = ["std"] }
 rppal = { version = "0.13.0", features = ["hal"] }
 shared-bus = {git = "https://github.com/TeyKey1/shared-bus.git", rev = "046dc03", features = ["std"]}
 lazy_static = "1.4.0"
