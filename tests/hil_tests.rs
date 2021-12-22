@@ -396,16 +396,15 @@ mod cached {
     use pca9535::{Expander, Pca9535Cached, Register};
 
     lazy_static! {
-        static ref EXPANDER: Mutex<Pca9535Cached<I2cProxy<'static, Mutex<I2c>>, InputPin>> = {
+        static ref INTERRUPT_PIN: InputPin = {
             let gpio = Gpio::new().unwrap();
+
+            gpio.get(6).unwrap().into_input()
+        };
+        static ref EXPANDER: Mutex<Pca9535Cached<'static, I2cProxy<'static, Mutex<I2c>>, InputPin>> = {
             let i2c_bus = *I2C_BUS.lock().unwrap();
-            let expander = Pca9535Cached::new(
-                i2c_bus.acquire_i2c(),
-                ADDR,
-                gpio.get(6).unwrap().into_input(),
-                false,
-            )
-            .unwrap();
+            let expander =
+                Pca9535Cached::new(i2c_bus.acquire_i2c(), ADDR, &*INTERRUPT_PIN, false).unwrap();
 
             Mutex::new(expander)
         };
@@ -590,6 +589,8 @@ mod cached {
     mod pin {
         use crate::{lazy_static::lazy_static, Pca9535GPIO, ADDR, I2C_BUS, RPI_GPIO};
 
+        use super::INTERRUPT_PIN;
+
         use serial_test::serial;
         use shared_bus::I2cProxy;
         use std::sync::Mutex;
@@ -600,25 +601,17 @@ mod cached {
         use pca9535::{
             ExpanderInputPin, ExpanderOutputPin, GPIOBank, IoExpander, Pca9535Cached, PinState,
         };
-        use rppal::{
-            gpio::{Gpio, InputPin},
-            i2c::I2c,
-        };
+        use rppal::{gpio::InputPin, i2c::I2c};
 
         lazy_static! {
             static ref IO_EXPANDER: IoExpander<
-                Mutex<Pca9535Cached<I2cProxy<'static, Mutex<I2c>>, InputPin>>,
-                Pca9535Cached<I2cProxy<'static, Mutex<I2c>>, InputPin>,
+                Mutex<Pca9535Cached<'static, I2cProxy<'static, Mutex<I2c>>, InputPin>>,
+                Pca9535Cached<'static, I2cProxy<'static, Mutex<I2c>>, InputPin>,
             > = {
-                let gpio = Gpio::new().unwrap();
                 let i2c_bus = *I2C_BUS.lock().unwrap();
-                let expander = Pca9535Cached::new(
-                    i2c_bus.acquire_i2c(),
-                    ADDR,
-                    gpio.get(6).unwrap().into_input(),
-                    false,
-                )
-                .unwrap();
+                let expander =
+                    Pca9535Cached::new(i2c_bus.acquire_i2c(), ADDR, &*INTERRUPT_PIN, false)
+                        .unwrap();
 
                 IoExpander::new(expander)
             };
@@ -626,8 +619,8 @@ mod cached {
                 Pca9535GPIO<
                     'static,
                     IoExpander<
-                        Mutex<Pca9535Cached<I2cProxy<'static, Mutex<I2c>>, InputPin>>,
-                        Pca9535Cached<I2cProxy<'static, Mutex<I2c>>, InputPin>,
+                        Mutex<Pca9535Cached<'static, I2cProxy<'static, Mutex<I2c>>, InputPin>>,
+                        Pca9535Cached<'static, I2cProxy<'static, Mutex<I2c>>, InputPin>,
                     >,
                 >,
             > = {

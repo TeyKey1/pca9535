@@ -11,14 +11,14 @@ use super::GPIOBank;
 use super::Register;
 
 #[derive(Debug)]
-pub struct Pca9535Cached<I2C, IP>
+pub struct Pca9535Cached<'a, I2C, IP>
 where
     I2C: Write + WriteRead,
     IP: InputPin,
 {
     address: u8,
     i2c: I2C,
-    interrupt_pin: IP,
+    interrupt_pin: &'a IP,
 
     input_port_0: u8,
     input_port_1: u8,
@@ -30,7 +30,7 @@ where
     configuration_port_1: u8,
 }
 
-impl<I2C: Write + WriteRead, IP: InputPin> Pca9535Cached<I2C, IP> {
+impl<'a, I2C: Write + WriteRead, IP: InputPin> Pca9535Cached<'a, I2C, IP> {
     ///Creates a new cached PCA9535 instance.
     ///
     /// # Cached registers
@@ -42,7 +42,7 @@ impl<I2C: Write + WriteRead, IP: InputPin> Pca9535Cached<I2C, IP> {
     pub fn new(
         i2c: I2C,
         address: u8,
-        interrupt_pin: IP,
+        interrupt_pin: &'a IP,
         init_defaults: bool,
     ) -> Result<Self, ExpanderError<I2C>> {
         assert!(address > 31 && address < 40);
@@ -138,7 +138,7 @@ impl<I2C: Write + WriteRead, IP: InputPin> Pca9535Cached<I2C, IP> {
     }
 }
 
-impl<I2C: Write + WriteRead + Debug, IP: InputPin> Expander for Pca9535Cached<I2C, IP> {
+impl<'a, I2C: Write + WriteRead + Debug, IP: InputPin> Expander for Pca9535Cached<'a, I2C, IP> {
     type Error = ExpanderError<I2C>;
 
     /// Writes one byte to given register
@@ -233,8 +233,8 @@ impl<I2C: Write + WriteRead + Debug, IP: InputPin> Expander for Pca9535Cached<I2
     }
 }
 
-impl<I2C: Write + WriteRead + Debug, IP: InputPin> StandardExpanderInterface
-    for Pca9535Cached<I2C, IP>
+impl<'a, I2C: Write + WriteRead + Debug, IP: InputPin> StandardExpanderInterface
+    for Pca9535Cached<'a, I2C, IP>
 {
     type Error = ExpanderError<I2C>;
 
