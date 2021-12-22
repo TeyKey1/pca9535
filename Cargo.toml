@@ -21,4 +21,5 @@ pca9535 = { path = ".", features = ["std"] }
 rppal = { version = "0.13.0", features = ["hal"] }
 shared-bus = {git = "https://github.com/TeyKey1/shared-bus.git", rev = "046dc03", features = ["std"]}
 lazy_static = "1.4.0"
+serial_test = "0.5.0"
 

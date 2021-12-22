@@ -130,9 +130,12 @@ mod immediate {
         use super::EXPANDER;
         use crate::RPI_GPIO;
 
+        use serial_test::serial;
+
         use pca9535::{GPIOBank, StandardExpanderInterface};
 
         #[test]
+        #[serial(immediate_std)]
         fn input_pin_is_high() {
             let expander = &mut *EXPANDER.lock().unwrap();
             let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
@@ -146,6 +149,7 @@ mod immediate {
         }
 
         #[test]
+        #[serial(immediate_std)]
         fn input_pin_is_low() {
             let expander = &mut *EXPANDER.lock().unwrap();
             let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
@@ -159,6 +163,7 @@ mod immediate {
         }
 
         #[test]
+        #[serial(immediate_std)]
         fn output_high() {
             let expander = &mut *EXPANDER.lock().unwrap();
             let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
@@ -172,6 +177,7 @@ mod immediate {
         }
 
         #[test]
+        #[serial(immediate_std)]
         fn output_low() {
             let expander = &mut *EXPANDER.lock().unwrap();
             let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
@@ -185,6 +191,7 @@ mod immediate {
         }
 
         #[test]
+        #[serial(immediate_std)]
         fn input_polarity_single() {
             let expander = &mut *EXPANDER.lock().unwrap();
             let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
@@ -212,6 +219,7 @@ mod immediate {
         }
 
         #[test]
+        #[serial(immediate_std)]
         fn input_polarity_all() {
             let expander = &mut *EXPANDER.lock().unwrap();
             let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
@@ -322,9 +330,12 @@ mod cached {
         use super::EXPANDER;
         use crate::RPI_GPIO;
 
+        use serial_test::serial;
+
         use pca9535::{GPIOBank, StandardExpanderInterface};
 
         #[test]
+        #[serial(cached_std)]
         fn input_pin_is_high() {
             let expander = &mut *EXPANDER.lock().unwrap();
             let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
@@ -338,6 +349,7 @@ mod cached {
         }
 
         #[test]
+        #[serial(cached_std)]
         fn input_pin_is_low() {
             let expander = &mut *EXPANDER.lock().unwrap();
             let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
@@ -351,6 +363,7 @@ mod cached {
         }
 
         #[test]
+        #[serial(cached_std)]
         fn output_high() {
             let expander = &mut *EXPANDER.lock().unwrap();
             let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
@@ -364,6 +377,7 @@ mod cached {
         }
 
         #[test]
+        #[serial(cached_std)]
         fn output_low() {
             let expander = &mut *EXPANDER.lock().unwrap();
             let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
@@ -377,6 +391,7 @@ mod cached {
         }
 
         #[test]
+        #[serial(cached_std)]
         fn input_polarity_single() {
             let expander = &mut *EXPANDER.lock().unwrap();
             let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
@@ -407,6 +422,7 @@ mod cached {
         }
 
         #[test]
+        #[serial(cached_std)]
         fn input_polarity_all() {
             let expander = &mut *EXPANDER.lock().unwrap();
             let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
@@ -447,19 +463,20 @@ mod cached {
     mod pin {
         use crate::{lazy_static::lazy_static, Pca9535GPIO, ADDR, I2C_BUS, RPI_GPIO};
 
+        use serial_test::serial;
+        use shared_bus::I2cProxy;
+        use std::sync::Mutex;
+
         use embedded_hal::digital::blocking::{
             InputPin as HalInputPin, IoPin, OutputPin as HalOutputPin,
         };
         use pca9535::{
-            expander::SyncExpander, ExpanderInputPin, ExpanderOutputPin, GPIOBank, IoExpander,
-            Pca9535Cached, PinState,
+            ExpanderInputPin, ExpanderOutputPin, GPIOBank, IoExpander, Pca9535Cached, PinState,
         };
         use rppal::{
             gpio::{Gpio, InputPin},
             i2c::I2c,
         };
-        use shared_bus::I2cProxy;
-        use std::sync::Mutex;
 
         lazy_static! {
             static ref IO_EXPANDER: IoExpander<
@@ -476,11 +493,7 @@ mod cached {
                 )
                 .unwrap();
 
-                let exp = IoExpander::new(expander);
-
-                &exp.write_halfword(pca9535::Register::ConfigurationPort0, 0x00);
-
-                exp
+                IoExpander::new(expander)
             };
             static ref PCA9535_GPIO: Mutex<
                 Pca9535GPIO<
@@ -515,6 +528,7 @@ mod cached {
         }
 
         #[test]
+        #[serial(cached_pin)]
         fn input_pin_is_high() {
             let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
             let pca9535_gpio = PCA9535_GPIO.lock().unwrap();
@@ -525,6 +539,7 @@ mod cached {
         }
 
         #[test]
+        #[serial(cached_pin)]
         fn input_pin_is_low() {
             let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
             let pca9535_gpio = PCA9535_GPIO.lock().unwrap();
@@ -535,6 +550,7 @@ mod cached {
         }
 
         #[test]
+        #[serial(cached_pin)]
         fn output_low() {
             let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
             let mut pca9535_gpio = PCA9535_GPIO.lock().unwrap();
@@ -545,6 +561,7 @@ mod cached {
         }
 
         #[test]
+        #[serial(cached_pin)]
         fn output_high() {
             let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
             let mut pca9535_gpio = PCA9535_GPIO.lock().unwrap();
@@ -555,6 +572,7 @@ mod cached {
         }
 
         #[test]
+        #[serial(cached_pin)]
         fn pin_conversion() {
             let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
             let input_pin = ExpanderInputPin::new(&*IO_EXPANDER, GPIOBank::Bank0, 3).unwrap();
