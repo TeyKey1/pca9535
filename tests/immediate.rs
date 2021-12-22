@@ -33,6 +33,10 @@ fn read_write_byte() {
         .unwrap();
 
     assert_eq!(buffer, 0xCD);
+
+    expander
+        .write_byte(Register::PolarityInversionPort0, 0x00)
+        .unwrap();
 }
 
 #[test]
