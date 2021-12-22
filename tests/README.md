@@ -15,6 +15,7 @@ If you develop the tests on a different operating system than the Raspberry Pi y
 To run the tests on the Raspberry Pi you can use the standard `cargo test` command.
 
 ## Wiring
-For more information on how to wire the Raspberry Pi and the PCA9535 for testing, please refer to the [schematics](./schematics/pca9535_testbench)
+For more information on how to wire the Raspberry Pi and the PCA9535 for testing, please refer to the [schematics](./Schematics/pca9535_testbench)
 
 
+tests/schematics/pca9535_testbench
