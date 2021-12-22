@@ -6,6 +6,7 @@ PCA9535 IO-Expander driver using embedded-hal.
 ### Two expander modes:
 - Immediate
 - Cached
+
 Immediate mode issues an i2c bus transaction on each function call, behaving like a normal i2c device library does.
 
 Cached mode takes advantage of the interrupt pin of the device, which indicates a change in the register value. The driver holds an internal representation of the device's registers and thus it only issues a read if any data changed as indicated by the interrupt pin. This mode reduces read access on the bus significantly compared to immediate mode.
@@ -13,6 +14,7 @@ Cached mode takes advantage of the interrupt pin of the device, which indicates 
 ### Two ways of interacting:
 - Standard Interface
 - HAL Pin Interface
+
 The standard interface offers all needed functions to interact with the GPIO pins of the device.
 
 The HAL Pin Interface offers a way to use the Expander GPIO as embedded-hal GPIO which makes it possible to use them in any other libraries using embedded-hal. The pins are usable across threads using an ExpanderMutex. 
