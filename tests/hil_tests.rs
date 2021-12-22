@@ -265,6 +265,7 @@ mod cached {
         gpio::{Gpio, InputPin},
         i2c::I2c,
     };
+    use serial_test::serial;
     use shared_bus::I2cProxy;
     use std::sync::Mutex;
 
@@ -287,6 +288,7 @@ mod cached {
     }
 
     #[test]
+    #[serial(cached_std)]
     fn read_write_byte() {
         let expander = &mut *EXPANDER.lock().unwrap();
 
@@ -304,6 +306,7 @@ mod cached {
     }
 
     #[test]
+    #[serial(cached_std)]
     fn read_write_halfword() {
         let expander = &mut *EXPANDER.lock().unwrap();
 
