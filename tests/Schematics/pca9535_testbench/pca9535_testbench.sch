@@ -4,11 +4,11 @@ EELAYER END
 $Descr A4 11693 8268
 encoding utf-8
 Sheet 1 1
-Title ""
-Date ""
-Rev ""
+Title "PCA9535 Testbench"
+Date "2021-12-22"
+Rev "0"
 Comp ""
-Comment1 ""
+Comment1 "Thierry Kühni (TeyKey1)"
 Comment2 ""
 Comment3 ""
 Comment4 ""
@@ -685,7 +685,7 @@ L Connector:Raspberry_Pi_2_3 J?
 U 1 1 617CCE67
 P 2800 5250
 F 0 "J?" H 2800 6731 50  0000 C CNN
-F 1 "Raspberry_Pi_2_3" H 2800 6640 50  0000 C CNN
+F 1 "Raspberry_Pi_2_3" H 2050 6550 50  0000 C CNN
 F 2 "" H 2800 5250 50  0001 C CNN
 F 3 "https://www.raspberrypi.org/documentation/hardware/raspberrypi/schematics/rpi_SCH_3bplus_1p0_reduced.pdf" H 2800 5250 50  0001 C CNN
 	1    2800 5250
