@@ -22,7 +22,7 @@ The HAL Pin Interface offers a way to use the Expander GPIO as embedded-hal GPIO
 ## Usage Example
 This is a basic usage example, for more information visit the docs.
 
-Immediate expader using standard interface:
+Immediate expander using standard interface:
 ```rust
 use pca9535::{GPIOBank, Pca9535Immediate, StandardExpanderInterface};
 
