@@ -254,7 +254,131 @@ mod immediate {
     }
 
     #[cfg(test)]
-    mod pin {}
+    mod pin {
+        use crate::{lazy_static::lazy_static, Pca9535GPIO, ADDR, I2C_BUS, RPI_GPIO};
+
+        use serial_test::serial;
+        use shared_bus::I2cProxy;
+        use std::sync::Mutex;
+
+        use embedded_hal::digital::blocking::{
+            InputPin as HalInputPin, IoPin, OutputPin as HalOutputPin,
+        };
+        use pca9535::{
+            ExpanderInputPin, ExpanderOutputPin, GPIOBank, IoExpander, Pca9535Immediate, PinState,
+        };
+        use rppal::i2c::I2c;
+
+        lazy_static! {
+            static ref IO_EXPANDER: IoExpander<
+                Mutex<Pca9535Immediate<I2cProxy<'static, Mutex<I2c>>>>,
+                Pca9535Immediate<I2cProxy<'static, Mutex<I2c>>>,
+            > = {
+                let i2c_bus = *I2C_BUS.lock().unwrap();
+                let expander = Pca9535Immediate::new(i2c_bus.acquire_i2c(), ADDR);
+
+                IoExpander::new(expander)
+            };
+            static ref PCA9535_GPIO: Mutex<
+                Pca9535GPIO<
+                    'static,
+                    IoExpander<
+                        Mutex<Pca9535Immediate<I2cProxy<'static, Mutex<I2c>>>>,
+                        Pca9535Immediate<I2cProxy<'static, Mutex<I2c>>>,
+                    >,
+                >,
+            > = {
+                let pca9535_gpio = Pca9535GPIO {
+                    _in0_3: ExpanderInputPin::new(&*IO_EXPANDER, GPIOBank::Bank0, 3).unwrap(),
+                    in0_4: ExpanderInputPin::new(&*IO_EXPANDER, GPIOBank::Bank0, 4).unwrap(),
+                    _out0_7: ExpanderOutputPin::new(
+                        &*IO_EXPANDER,
+                        GPIOBank::Bank0,
+                        7,
+                        PinState::High,
+                    )
+                    .unwrap(),
+                    out1_5: ExpanderOutputPin::new(
+                        &*IO_EXPANDER,
+                        GPIOBank::Bank1,
+                        5,
+                        PinState::Low,
+                    )
+                    .unwrap(),
+                };
+
+                Mutex::new(pca9535_gpio)
+            };
+        }
+
+        #[test]
+        #[serial(immediate_pin)]
+        fn input_pin_is_high() {
+            let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
+            let pca9535_gpio = PCA9535_GPIO.lock().unwrap();
+
+            rpi_gpio.out0_4.set_high();
+
+            assert_eq!(pca9535_gpio.in0_4.is_high().unwrap(), true);
+        }
+
+        #[test]
+        #[serial(immediate_pin)]
+        fn input_pin_is_low() {
+            let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
+            let pca9535_gpio = PCA9535_GPIO.lock().unwrap();
+
+            rpi_gpio.out0_4.set_low();
+
+            assert_eq!(pca9535_gpio.in0_4.is_low().unwrap(), true);
+        }
+
+        #[test]
+        #[serial(immediate_pin)]
+        fn output_low() {
+            let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
+            let mut pca9535_gpio = PCA9535_GPIO.lock().unwrap();
+
+            pca9535_gpio.out1_5.set_low().unwrap();
+
+            assert_eq!(rpi_gpio.in1_5.is_low(), true);
+        }
+
+        #[test]
+        #[serial(immediate_pin)]
+        fn output_high() {
+            let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
+            let mut pca9535_gpio = PCA9535_GPIO.lock().unwrap();
+
+            pca9535_gpio.out1_5.set_high().unwrap();
+
+            assert_eq!(rpi_gpio.in1_5.is_high(), true);
+        }
+
+        #[test]
+        #[serial(immediate_pin)]
+        fn pin_conversion() {
+            let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
+            let input_pin = ExpanderInputPin::new(&*IO_EXPANDER, GPIOBank::Bank0, 3).unwrap();
+            let output_pin =
+                ExpanderOutputPin::new(&*IO_EXPANDER, GPIOBank::Bank0, 7, PinState::High).unwrap();
+
+            let mut input_to_output = input_pin.into_output_pin(PinState::Low).unwrap();
+
+            input_to_output.set_high().unwrap();
+
+            assert_eq!(rpi_gpio.in0_3.is_high(), true);
+
+            rpi_gpio.out0_7.set_high();
+
+            let output_to_input = output_pin.into_input_pin().unwrap();
+
+            assert_eq!(output_to_input.is_high().unwrap(), true);
+
+            output_to_input.into_output_pin(PinState::Low).unwrap();
+            input_to_output.into_input_pin().unwrap();
+        }
+    }
 }
 
 #[cfg(test)]
