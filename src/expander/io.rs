@@ -1,3 +1,5 @@
+//! Contains the implementation to make an [`Expander`] Sync.
+
 use core::marker::PhantomData;
 
 use super::{Register, SyncExpander};

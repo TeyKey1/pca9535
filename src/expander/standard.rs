@@ -4,7 +4,7 @@ use super::{Expander, GPIOBank, Register};
 
 /// Standard expander interface not using [`hal`].
 ///
-/// This interface does not track the state of the pins! Therefore the user needs to ensure the pins are in input or output configuration before proceeding to call functions related to input or output pins. Otherwise the results of those functions might not cause the expected behavior of the device.
+/// This interface does not track the state of the pins! Therefore, the user needs to ensure the pins are in input or output configuration before proceeding to call functions related to input or output pins. Otherwise, the results of those functions might not cause the expected behavior of the device.
 pub trait StandardExpanderInterface: Expander {
     type Error: core::fmt::Debug;
 

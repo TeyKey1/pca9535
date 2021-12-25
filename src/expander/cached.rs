@@ -1,3 +1,5 @@
+//! Contains the implementation of the Cached Expander interface.
+
 use core::fmt::Debug;
 
 use hal::digital::blocking::InputPin;
@@ -35,7 +37,7 @@ impl<'a, I2C: Write + WriteRead, IP: InputPin> Pca9535Cached<'a, I2C, IP> {
     ///
     /// # Cached registers
     /// The init_defaults argument assumes the default values for all the registers of the device if set to `true` (Default register condition after device startup, see the device's documentation for more information). In that case no bus transaction is created to verify if this is actually the case on the device. Only use this option if you have not made any transactions with the device before creating this expander struct, otherwise you might encounter unexpected behavior of the device!
-    /// If the device was used before calling this function and should keep its state you should set init_defaults to `false`. This triggers a bus transaction to read out all the devices registers and caches the received values.
+    /// If the device was used before calling this function and should keep its state you should set init_defaults to `false`. This triggers a bus transaction to read out all the devices' registers and caches the received values.
     ///
     /// # Panics
     /// If given device hardware address is outside of the permittable range of `32-39`.

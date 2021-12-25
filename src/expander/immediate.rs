@@ -1,3 +1,5 @@
+//! Contains the implementation of the Immediate Expander interface.
+
 use core::fmt::Debug;
 
 use hal::i2c::blocking::{Write, WriteRead};

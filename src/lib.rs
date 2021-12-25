@@ -17,20 +17,20 @@ The library uses the blocking I2C embedded-hal traits. Each implementation of [`
 For this purpose it is recommended to use crates like [shared-bus](https://crates.io/crates/shared-bus)
 
 # Usage
-This library can be used in multiple ways depending on the usecase and needs.
+This library can be used in multiple ways depending on the use case and needs.
 
 ## Operation types
 The device has two possible configurations on how i2c bus traffic is handled:
 
 ### Immediate
-The immediate expander interface [`Pca9535Immediate`] issues a i2c bus transaction on each function call an state change of the expander. It does not make use of the open drain interrupt output of the device to reduce bus traffic and does not hold any state on the device registers.
+The immediate expander interface [`Pca9535Immediate`] issues a i2c bus transaction on each function call a state change of the expander. It does not make use of the open drain interrupt output of the device to reduce bus traffic and does not hold any state on the device registers.
 ```ignore
 use pca9535::Pca9535Immediate;
 
 let expander = Pca9535Immediate::new(i2c, address);
 ```
 ### Cached
-The cached expander interface [`Pca9535Cached`] stores the state of the devices registers internally in order to reduce the i2c bus traffic as much as much as possible. It relies on the open drain interrupt pin of the device to detect any changes to the registers. Thus the use of this hardware pin is mandatory for this interface.
+The cached expander interface [`Pca9535Cached`] stores the state of the devices registers internally in order to reduce the i2c bus traffic as much as much as possible. It relies on the open drain interrupt pin of the device to detect any changes to the registers. Thus, the use of this hardware pin is mandatory for this interface.
 ```ignore
 use pca9535::Pca9535Cached;
 
@@ -62,7 +62,7 @@ let expander = ...; //Either Immediate or Cached expander
 
 let io_expander = IoExpander<Mutex<_>, _> = IoExpander::new(expander); // Wrapped expander in std environment using Mutex as ExpanderMutex
 ```
-By using this wrapper the expander gets automatically wrapped into an [`ExpanderMutex`] which ensures exclusive access to the expander and makes it [`Sync`]. Currently ExpanderMutex is only implemented for `std` environment. You can activate this implementation by enabling the "std" feature of this crate. For other architectures on bare metal etc. the ExpanderMutex trait can be implemented on any type which ensures exclusive access to the contained data. Once this is done the expander can be wrapped inside a IoExpander as described previously using the newly implemented ExpanderMutex trait.
+By using this wrapper, the expander gets automatically wrapped into an [`ExpanderMutex`] which ensures exclusive access to the expander and makes it [`Sync`]. Currently ExpanderMutex is only implemented for `std` environment. You can activate this implementation by enabling the "std" feature of this crate. For other architectures on bare metal etc. the ExpanderMutex trait can be implemented on any type which ensures exclusive access to the contained data. Once this is done the expander can be wrapped inside a IoExpander as described previously using the newly implemented ExpanderMutex trait.
 
 Now it is possible to generate either [`ExpanderInputPin`] or [`ExpanderOutputPin`] and manipulate the IO expander through those pins. They implement all the standard [`hal`] traits on GPIO pins and could theoretically also be used in other libraries requiring hal GPIO pins.
 ```ignore
@@ -95,6 +95,7 @@ pub use expander::io::IoExpander;
 pub use expander::standard::StandardExpanderInterface;
 pub use expander::Expander;
 pub use expander::ExpanderError;
+pub use expander::SyncExpander;
 pub use hal::digital::PinState;
 pub use mutex::ExpanderMutex;
 pub use pin::ExpanderInputPin;
@@ -105,7 +106,7 @@ pub use pin::ExpanderOutputPin;
 /// The enum represents the command byte values used to access the corresponding registers.
 ///
 /// # Register pairs
-/// The registers of the device are all 8 bit and act as four register pairs. Therefore writing a halfword to a register results in the 8 least significant bits being written to the provided register, while the 8 most significant bits will be automatically written to the other register of the pair.
+/// The registers of the device are all 8 bit and act as four register pairs. Therefore, writing a halfword to a register results in the 8 least significant bits being written to the provided register, while the 8 most significant bits will be automatically written to the other register of the pair.
 ///
 /// **Pairs**
 /// 1) InputPort0 and InputPort1

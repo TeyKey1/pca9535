@@ -1,3 +1,5 @@
+//! Contains the implementation of the hal-pin usage inteface.
+
 extern crate alloc;
 
 use hal::digital::blocking::{InputPin, IoPin, OutputPin};
