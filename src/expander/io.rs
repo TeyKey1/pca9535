@@ -9,13 +9,14 @@ use crate::ExpanderMutex;
 /// This Expander type can be used to generate [`crate::ExpanderInputPin`] or [`crate::ExpanderOutputPin`].
 pub struct IoExpander<Em, Ex>
 where
+    Ex: Send,
     Em: ExpanderMutex<Ex>,
 {
     expander_mutex: Em,
     phantom_data: PhantomData<Ex>,
 }
 
-impl<Em: ExpanderMutex<Ex>, Ex: Expander> IoExpander<Em, Ex> {
+impl<Em: ExpanderMutex<Ex>, Ex: Expander + Send> IoExpander<Em, Ex> {
     /// Creates a new IoExpander instance out of an Expander.
     pub fn new(expander: Ex) -> IoExpander<Em, Ex> {
         IoExpander {
@@ -25,7 +26,7 @@ impl<Em: ExpanderMutex<Ex>, Ex: Expander> IoExpander<Em, Ex> {
     }
 }
 
-impl<Em: ExpanderMutex<Ex>, Ex: Expander> SyncExpander for IoExpander<Em, Ex> {
+impl<Em: ExpanderMutex<Ex>, Ex: Expander + Send> SyncExpander for IoExpander<Em, Ex> {
     type Error = <Ex as Expander>::Error;
 
     fn write_byte(&self, register: Register, data: u8) -> Result<(), Self::Error> {
