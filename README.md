@@ -1,3 +1,5 @@
+[![crates.io](https://img.shields.io/crates/v/pca9535)](https://crates.io/crates/pca9535) [![documentation](https://docs.rs/pca9535/badge.svg)](https://docs.rs/pca9535)
+
 # PCA9535
 PCA9535 IO-Expander driver using embedded-hal.
 
