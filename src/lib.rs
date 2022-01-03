@@ -172,6 +172,14 @@ impl Register {
     fn is_input(&self) -> bool {
         matches!(self, Self::InputPort0 | Self::InputPort1)
     }
+
+    /// Returns true if register is a polarity inversion register
+    fn is_polarity_inversion(&self) -> bool {
+        matches!(
+            self,
+            Self::PolarityInversionPort0 | Self::PolarityInversionPort1
+        )
+    }
 }
 
 /// The gpio banks of the device
