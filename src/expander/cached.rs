@@ -164,7 +164,7 @@ impl<'a, I2C: Write + WriteRead + Debug, IP: InputPin> Expander for Pca9535Cache
                     Register::InputPort1,
                     self.get_cached(Register::InputPort1) ^ input_mask,
                 ),
-                _ => (),
+                _ => unreachable!(),
             }
         }
 
