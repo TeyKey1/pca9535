@@ -5,6 +5,8 @@ use core::fmt::Debug;
 use hal::digital::blocking::InputPin;
 use hal::i2c::blocking::{Write, WriteRead};
 
+use crate::StandardExpanderInterface;
+
 use super::Expander;
 use super::ExpanderError;
 use super::Register;
@@ -273,4 +275,10 @@ impl<'a, I2C: Write + WriteRead + Debug, IP: InputPin> Expander for Pca9535Cache
 
         Ok(())
     }
+}
+
+impl<'a, I2C: Write + WriteRead + Debug, IP: InputPin> StandardExpanderInterface
+    for Pca9535Cached<'a, I2C, IP>
+{
+    type Error = ExpanderError<I2C>;
 }
