@@ -1,6 +1,6 @@
 [package]
 name = "pca9535"
-version = "0.0.1"
+version = "0.1.0"
 edition = "2018"
 authors = ["TeyKey1"]
 repository = "https://github.com/TeyKey1/pca9535"
