@@ -1,6 +1,6 @@
-[![crates.io](https://img.shields.io/crates/v/pca9535)](https://crates.io/crates/pca9535) [![documentation](https://docs.rs/pca9535/badge.svg)](https://docs.rs/pca9535)
-
 # PCA9535
+[![crates.io](https://img.shields.io/crates/v/pca9535)](https://crates.io/crates/pca9535) [![documentation](https://docs.rs/pca9535/badge.svg)](https://docs.rs/pca9535) [![license](https://img.shields.io/crates/l/pca9535.svg)](./LICENSE)
+
 PCA9535 IO-Expander driver using embedded-hal.
 
 ## Features
@@ -22,7 +22,7 @@ The standard interface offers all needed functions to interact with the GPIO pin
 The HAL Pin Interface offers a way to use the Expander GPIO as embedded-hal GPIO which makes it possible to use them in any other libraries using embedded-hal. The pins are usable across threads using an ExpanderMutex. 
 
 ## Usage Example
-This is a basic usage example, for more information visit the docs.
+This is a basic usage example, for more information visit the [docs](https://docs.rs/pca9535/).
 
 Immediate expander using standard interface:
 ```rust
