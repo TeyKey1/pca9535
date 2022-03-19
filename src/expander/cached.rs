@@ -7,9 +7,7 @@ use hal::i2c::blocking::{Write, WriteRead};
 
 use crate::StandardExpanderInterface;
 
-use super::Expander;
-use super::ExpanderError;
-use super::Register;
+use super::{Expander, ExpanderError, Register};
 
 #[derive(Debug)]
 pub struct Pca9535Cached<'a, I2C, IP>
@@ -139,19 +137,17 @@ impl<'a, I2C: Write + WriteRead, IP: InputPin> Pca9535Cached<'a, I2C, IP> {
     }
 }
 
-impl<'a, I2C: Write + WriteRead + Debug, IP: InputPin> Expander for Pca9535Cached<'a, I2C, IP> {
-    type Error = ExpanderError<I2C>;
-
+impl<'a, I2C: Write + WriteRead, IP: InputPin> Expander<I2C> for Pca9535Cached<'a, I2C, IP> {
     /// Writes one byte to given register
     ///
     /// Only use this function if you really have to. The crate provides simpler ways of interacting with the device for most usecases.
     ///
     /// # Cached
     /// If the bus write succeeds the written data is cached to avoid the need for bus traffic upon reading the written register.
-    fn write_byte(&mut self, register: Register, data: u8) -> Result<(), Self::Error> {
+    fn write_byte(&mut self, register: Register, data: u8) -> Result<(), ExpanderError<I2C>> {
         self.i2c
             .write(self.address, &[register as u8, data])
-            .map_err(Self::Error::WriteError)?;
+            .map_err(ExpanderError::WriteError)?;
 
         // As the IO Expander does not trigger an interrupt once the polarity inversion register value changes, writes to the polarity inversion registers need a special implementation in order to ensure that the input register cache stays up to date.
         if register.is_polarity_inversion() {
@@ -180,13 +176,13 @@ impl<'a, I2C: Write + WriteRead + Debug, IP: InputPin> Expander for Pca9535Cache
     ///
     /// # Cached
     /// This function only creates bus traffic in case the provided interrupt pin is held at a `low` voltage level at the time of the function call and the provided register is an input register. In that case the data is being read from the device, as the devices interrupt output indicates a data change. Otherwise the cached value is returned without causing any bus traffic.
-    fn read_byte(&mut self, register: Register, buffer: &mut u8) -> Result<(), Self::Error> {
+    fn read_byte(&mut self, register: Register, buffer: &mut u8) -> Result<(), ExpanderError<I2C>> {
         if self.interrupt_pin.is_low().unwrap() && register.is_input() {
             let mut buf = [0u8];
 
             self.i2c
                 .write_read(self.address, &[register as u8], &mut buf)
-                .map_err(Self::Error::WriteReadError)?;
+                .map_err(ExpanderError::WriteReadError)?;
 
             self.set_cached(register, buf[0]);
 
@@ -207,13 +203,13 @@ impl<'a, I2C: Write + WriteRead + Debug, IP: InputPin> Expander for Pca9535Cache
     ///
     /// # Cached
     /// If the bus write succeeds the written data is cached to avoid the need for bus traffic upon reading the written register.
-    fn write_halfword(&mut self, register: Register, data: u16) -> Result<(), Self::Error> {
+    fn write_halfword(&mut self, register: Register, data: u16) -> Result<(), ExpanderError<I2C>> {
         self.i2c
             .write(
                 self.address,
                 &[register as u8, (data >> 8) as u8, data as u8],
             )
-            .map_err(Self::Error::WriteError)?;
+            .map_err(ExpanderError::WriteError)?;
 
         // As the IO Expander does not trigger an interrupt once the polarity inversion register value changes, writes to the polarity inversion registers need a special implementation in order to ensure that the input register cache stays up to date.
         if register.is_polarity_inversion() {
@@ -256,13 +252,17 @@ impl<'a, I2C: Write + WriteRead + Debug, IP: InputPin> Expander for Pca9535Cache
     ///
     /// # Cached
     /// This function only creates bus traffic in case the provided interrupt pin is held at a `low` voltage level at the time of the function call and the provided register is an input register. In that case the data is being read from the device, as the devices interrupt output indicates a data change. Otherwise the cached value is returned without causing any bus traffic.
-    fn read_halfword(&mut self, register: Register, buffer: &mut u16) -> Result<(), Self::Error> {
+    fn read_halfword(
+        &mut self,
+        register: Register,
+        buffer: &mut u16,
+    ) -> Result<(), ExpanderError<I2C>> {
         let mut reg_val: [u8; 2] = [0x00; 2];
 
         if self.interrupt_pin.is_low().unwrap() && register.is_input() {
             self.i2c
                 .write_read(self.address, &[register as u8], &mut reg_val)
-                .map_err(Self::Error::WriteReadError)?;
+                .map_err(ExpanderError::WriteReadError)?;
 
             self.set_cached(register, reg_val[0]);
             self.set_cached(register.get_neighbor(), reg_val[1]);
@@ -277,8 +277,7 @@ impl<'a, I2C: Write + WriteRead + Debug, IP: InputPin> Expander for Pca9535Cache
     }
 }
 
-impl<'a, I2C: Write + WriteRead + Debug, IP: InputPin> StandardExpanderInterface
+impl<'a, I2C: Write + WriteRead, IP: InputPin> StandardExpanderInterface<I2C>
     for Pca9535Cached<'a, I2C, IP>
 {
-    type Error = ExpanderError<I2C>;
 }

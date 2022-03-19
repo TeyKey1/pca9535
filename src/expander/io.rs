@@ -2,47 +2,56 @@
 
 use core::marker::PhantomData;
 
-use super::{Register, SyncExpander};
+use hal::i2c::blocking::{Write, WriteRead};
 
-use super::Expander;
+use super::{Expander, ExpanderError, Register, SyncExpander};
 use crate::ExpanderMutex;
 
 /// A wrapper struct to make an Expander Sync.
 /// This Expander type can be used to generate [`crate::ExpanderInputPin`] or [`crate::ExpanderOutputPin`].
-pub struct IoExpander<Em, Ex>
+pub struct IoExpander<I2C, Ex, Em>
 where
-    Ex: Send,
+    I2C: Write + WriteRead,
+    Ex: Expander<I2C> + Send,
     Em: ExpanderMutex<Ex>,
 {
     expander_mutex: Em,
     phantom_data: PhantomData<Ex>,
+    phantom_data_2: PhantomData<I2C>,
 }
 
-impl<Em: ExpanderMutex<Ex>, Ex: Expander + Send> IoExpander<Em, Ex> {
+impl<I2C: Write + WriteRead, Em: ExpanderMutex<Ex>, Ex: Expander<I2C> + Send>
+    IoExpander<I2C, Ex, Em>
+{
     /// Creates a new IoExpander instance out of an Expander.
-    pub fn new(expander: Ex) -> IoExpander<Em, Ex> {
+    pub fn new(expander: Ex) -> IoExpander<I2C, Ex, Em> {
         IoExpander {
             expander_mutex: Em::new(expander),
             phantom_data: PhantomData,
+            phantom_data_2: PhantomData,
         }
     }
 }
 
-impl<Em: ExpanderMutex<Ex>, Ex: Expander + Send> SyncExpander for IoExpander<Em, Ex> {
-    type Error = <Ex as Expander>::Error;
-
-    fn write_byte(&self, register: Register, data: u8) -> Result<(), Self::Error> {
+impl<I2C: Write + WriteRead, Em: ExpanderMutex<Ex>, Ex: Expander<I2C> + Send> SyncExpander<I2C>
+    for IoExpander<I2C, Ex, Em>
+{
+    fn write_byte(&self, register: Register, data: u8) -> Result<(), ExpanderError<I2C>> {
         self.expander_mutex.lock(|ex| ex.write_byte(register, data))
     }
-    fn read_byte(&self, register: Register, buffer: &mut u8) -> Result<(), Self::Error> {
+    fn read_byte(&self, register: Register, buffer: &mut u8) -> Result<(), ExpanderError<I2C>> {
         self.expander_mutex
             .lock(|ex| ex.read_byte(register, buffer))
     }
-    fn write_halfword(&self, register: Register, data: u16) -> Result<(), Self::Error> {
+    fn write_halfword(&self, register: Register, data: u16) -> Result<(), ExpanderError<I2C>> {
         self.expander_mutex
             .lock(|ex| ex.write_halfword(register, data))
     }
-    fn read_halfword(&self, register: Register, buffer: &mut u16) -> Result<(), Self::Error> {
+    fn read_halfword(
+        &self,
+        register: Register,
+        buffer: &mut u16,
+    ) -> Result<(), ExpanderError<I2C>> {
         self.expander_mutex
             .lock(|ex| ex.read_halfword(register, buffer))
     }

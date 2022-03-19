@@ -2,8 +2,13 @@
 
 extern crate alloc;
 
+use std::marker::PhantomData;
+
 use hal::digital::blocking::{InputPin, IoPin, OutputPin};
 use hal::digital::PinState;
+use hal::i2c::blocking::{Write, WriteRead};
+
+use crate::ExpanderError;
 
 use super::expander::SyncExpander;
 use super::GPIOBank;
@@ -13,37 +18,37 @@ use super::Register;
 /// Single input device pin implementing [`InputPin`] and [`IoPin`] trait.
 ///
 /// The [`ExpanderInputPin`] instance can be used with other pieces of software using [`hal`].
-pub struct ExpanderInputPin<'a, Io>
+pub struct ExpanderInputPin<'a, I2C, Io>
 where
-    Io: SyncExpander,
+    I2C: Write + WriteRead,
+    Io: SyncExpander<I2C>,
 {
     expander: &'a Io,
     bank: GPIOBank,
     pin: u8,
+    phantom_data: PhantomData<I2C>,
 }
 
 /// Single output device pin implementing [`OutputPin`] and [`IoPin`] trait.
 ///
 /// The [`ExpanderInputPin`] instance can be used with other pieces of software using [`hal`].
-pub struct ExpanderOutputPin<'a, Io>
+pub struct ExpanderOutputPin<'a, I2C, Io>
 where
-    Io: SyncExpander,
+    I2C: Write + WriteRead,
+    Io: SyncExpander<I2C>,
 {
     expander: &'a Io,
     bank: GPIOBank,
     pin: u8,
+    phantom_data: PhantomData<I2C>,
 }
 
-impl<'a, Io: SyncExpander> ExpanderInputPin<'a, Io> {
+impl<'a, I2C: Write + WriteRead, Io: SyncExpander<I2C>> ExpanderInputPin<'a, I2C, Io> {
     /// Create a new input pin
     ///
     /// # Panics
     /// The function will panic if the provided pin is not in the allowed range of 0-7
-    pub fn new(
-        expander: &'a Io,
-        bank: GPIOBank,
-        pin: u8,
-    ) -> Result<Self, <Io as SyncExpander>::Error> {
+    pub fn new(expander: &'a Io, bank: GPIOBank, pin: u8) -> Result<Self, ExpanderError<I2C>> {
         assert!(pin < 8);
 
         let register = match bank {
@@ -60,6 +65,7 @@ impl<'a, Io: SyncExpander> ExpanderInputPin<'a, Io> {
             expander,
             bank,
             pin,
+            phantom_data: PhantomData,
         })
     }
 
@@ -68,7 +74,7 @@ impl<'a, Io: SyncExpander> ExpanderInputPin<'a, Io> {
     /// If the polarity is [`Polarity::Normal`] a logic `high` voltage level on the input is detected as `high` in the software.
     ///
     /// If the polarity is [`Polarity::Inverse`] a logic `high` voltage level on the input is detected as `low` by the software.
-    pub fn set_polarity(&mut self, polarity: Polarity) -> Result<(), <Io as SyncExpander>::Error> {
+    pub fn set_polarity(&mut self, polarity: Polarity) -> Result<(), ExpanderError<I2C>> {
         let register = match self.bank {
             GPIOBank::Bank0 => Register::PolarityInversionPort0,
             GPIOBank::Bank1 => Register::PolarityInversionPort1,
@@ -90,7 +96,7 @@ impl<'a, Io: SyncExpander> ExpanderInputPin<'a, Io> {
     }
 }
 
-impl<'a, Io: SyncExpander> ExpanderOutputPin<'a, Io> {
+impl<'a, I2C: Write + WriteRead, Io: SyncExpander<I2C>> ExpanderOutputPin<'a, I2C, Io> {
     /// Create a new output pin
     ///
     /// # Panics
@@ -100,7 +106,7 @@ impl<'a, Io: SyncExpander> ExpanderOutputPin<'a, Io> {
         bank: GPIOBank,
         pin: u8,
         state: PinState,
-    ) -> Result<Self, <Io as SyncExpander>::Error> {
+    ) -> Result<Self, ExpanderError<I2C>> {
         assert!(pin < 8);
 
         let cp_register = match bank {
@@ -131,12 +137,13 @@ impl<'a, Io: SyncExpander> ExpanderOutputPin<'a, Io> {
             expander,
             bank,
             pin,
+            phantom_data: PhantomData,
         })
     }
 }
 
-impl<'a, Io: SyncExpander> InputPin for ExpanderInputPin<'a, Io> {
-    type Error = <Io as SyncExpander>::Error;
+impl<'a, I2C: Write + WriteRead, Io: SyncExpander<I2C>> InputPin for ExpanderInputPin<'a, I2C, Io> {
+    type Error = ExpanderError<I2C>;
 
     fn is_high(&self) -> Result<bool, Self::Error> {
         let register = match self.bank {
@@ -171,16 +178,20 @@ impl<'a, Io: SyncExpander> InputPin for ExpanderInputPin<'a, Io> {
     }
 }
 
-impl<'a, Io: SyncExpander> IoPin<ExpanderInputPin<'a, Io>, ExpanderOutputPin<'a, Io>>
-    for ExpanderInputPin<'a, Io>
+impl<'a, I2C: Write + WriteRead, Io: SyncExpander<I2C>>
+    IoPin<ExpanderInputPin<'a, I2C, Io>, ExpanderOutputPin<'a, I2C, Io>>
+    for ExpanderInputPin<'a, I2C, Io>
 {
-    type Error = <Io as SyncExpander>::Error;
+    type Error = ExpanderError<I2C>;
 
-    fn into_input_pin(self) -> Result<ExpanderInputPin<'a, Io>, Self::Error> {
+    fn into_input_pin(self) -> Result<ExpanderInputPin<'a, I2C, Io>, Self::Error> {
         Ok(self)
     }
 
-    fn into_output_pin(self, state: PinState) -> Result<ExpanderOutputPin<'a, Io>, Self::Error> {
+    fn into_output_pin(
+        self,
+        state: PinState,
+    ) -> Result<ExpanderOutputPin<'a, I2C, Io>, Self::Error> {
         let cp_register = match self.bank {
             GPIOBank::Bank0 => Register::ConfigurationPort0,
             GPIOBank::Bank1 => Register::ConfigurationPort1,
@@ -212,12 +223,15 @@ impl<'a, Io: SyncExpander> IoPin<ExpanderInputPin<'a, Io>, ExpanderOutputPin<'a,
             expander: self.expander,
             bank: self.bank,
             pin: self.pin,
+            phantom_data: PhantomData,
         })
     }
 }
 
-impl<'a, Io: SyncExpander> OutputPin for ExpanderOutputPin<'a, Io> {
-    type Error = <Io as SyncExpander>::Error;
+impl<'a, I2C: Write + WriteRead, Io: SyncExpander<I2C>> OutputPin
+    for ExpanderOutputPin<'a, I2C, Io>
+{
+    type Error = ExpanderError<I2C>;
 
     fn set_low(&mut self) -> Result<(), Self::Error> {
         let register = match self.bank {
@@ -248,12 +262,13 @@ impl<'a, Io: SyncExpander> OutputPin for ExpanderOutputPin<'a, Io> {
     }
 }
 
-impl<'a, Io: SyncExpander> IoPin<ExpanderInputPin<'a, Io>, ExpanderOutputPin<'a, Io>>
-    for ExpanderOutputPin<'a, Io>
+impl<'a, I2C: Write + WriteRead, Io: SyncExpander<I2C>>
+    IoPin<ExpanderInputPin<'a, I2C, Io>, ExpanderOutputPin<'a, I2C, Io>>
+    for ExpanderOutputPin<'a, I2C, Io>
 {
-    type Error = <Io as SyncExpander>::Error;
+    type Error = ExpanderError<I2C>;
 
-    fn into_input_pin(self) -> Result<ExpanderInputPin<'a, Io>, Self::Error> {
+    fn into_input_pin(self) -> Result<ExpanderInputPin<'a, I2C, Io>, Self::Error> {
         let register = match self.bank {
             GPIOBank::Bank0 => Register::ConfigurationPort0,
             GPIOBank::Bank1 => Register::ConfigurationPort1,
@@ -270,10 +285,14 @@ impl<'a, Io: SyncExpander> IoPin<ExpanderInputPin<'a, Io>, ExpanderOutputPin<'a,
             expander: self.expander,
             bank: self.bank,
             pin: self.pin,
+            phantom_data: PhantomData,
         })
     }
 
-    fn into_output_pin(self, state: PinState) -> Result<ExpanderOutputPin<'a, Io>, Self::Error> {
+    fn into_output_pin(
+        self,
+        state: PinState,
+    ) -> Result<ExpanderOutputPin<'a, I2C, Io>, Self::Error> {
         let register = match self.bank {
             GPIOBank::Bank0 => Register::OutputPort0,
             GPIOBank::Bank1 => Register::OutputPort1,
