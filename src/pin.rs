@@ -2,7 +2,7 @@
 
 extern crate alloc;
 
-use std::marker::PhantomData;
+use core::marker::PhantomData;
 
 use hal::digital::blocking::{InputPin, IoPin, OutputPin};
 use hal::digital::PinState;
