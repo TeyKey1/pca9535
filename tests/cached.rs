@@ -1,18 +1,16 @@
 mod common;
 
-use common::{ADDR, I2C_BUS};
+use common::{ShareableI2c, ADDR, I2C_BUS};
 
 use lazy_static::lazy_static;
 
-use rppal::{
-    gpio::{Gpio, InputPin},
-    i2c::I2c,
-};
+use rppal::gpio::{Gpio, InputPin};
 use serial_test::serial;
-use shared_bus::I2cProxy;
 use std::sync::Mutex;
 
 use pca9535::{Expander, Pca9535Cached, Register};
+
+pub type CachedExpander = Pca9535Cached<'static, ShareableI2c, InputPin>;
 
 lazy_static! {
     static ref INTERRUPT_PIN: InputPin = {
@@ -20,7 +18,7 @@ lazy_static! {
 
         gpio.get(6).unwrap().into_input()
     };
-    static ref EXPANDER: Mutex<Pca9535Cached<'static, I2cProxy<'static, Mutex<I2c>>, InputPin>> = {
+    static ref EXPANDER: Mutex<CachedExpander> = {
         let i2c_bus = *I2C_BUS.lock().unwrap();
         let expander =
             Pca9535Cached::new(i2c_bus.acquire_i2c(), ADDR, &*INTERRUPT_PIN, false).unwrap();
@@ -210,13 +208,12 @@ mod standard {
 
 #[cfg(test)]
 mod pin {
-    use super::common::{Pca9535GPIO, ADDR, I2C_BUS, RPI_GPIO};
+    use super::common::{Pca9535GPIO, ShareableI2c, ADDR, I2C_BUS, RPI_GPIO};
 
-    use super::INTERRUPT_PIN;
+    use super::{CachedExpander, INTERRUPT_PIN};
 
     use lazy_static::lazy_static;
     use serial_test::serial;
-    use shared_bus::I2cProxy;
     use std::sync::Mutex;
 
     use embedded_hal::digital::blocking::{
@@ -225,13 +222,9 @@ mod pin {
     use pca9535::{
         ExpanderInputPin, ExpanderOutputPin, GPIOBank, IoExpander, Pca9535Cached, PinState,
     };
-    use rppal::{gpio::InputPin, i2c::I2c};
 
     lazy_static! {
-        static ref IO_EXPANDER: IoExpander<
-            Mutex<Pca9535Cached<'static, I2cProxy<'static, Mutex<I2c>>, InputPin>>,
-            Pca9535Cached<'static, I2cProxy<'static, Mutex<I2c>>, InputPin>,
-        > = {
+        static ref IO_EXPANDER: IoExpander<ShareableI2c, CachedExpander, Mutex<CachedExpander>> = {
             let i2c_bus = *I2C_BUS.lock().unwrap();
             let expander =
                 Pca9535Cached::new(i2c_bus.acquire_i2c(), ADDR, &*INTERRUPT_PIN, false).unwrap();
@@ -241,10 +234,8 @@ mod pin {
         static ref PCA9535_GPIO: Mutex<
             Pca9535GPIO<
                 'static,
-                IoExpander<
-                    Mutex<Pca9535Cached<'static, I2cProxy<'static, Mutex<I2c>>, InputPin>>,
-                    Pca9535Cached<'static, I2cProxy<'static, Mutex<I2c>>, InputPin>,
-                >,
+                IoExpander<ShareableI2c, CachedExpander, Mutex<CachedExpander>>,
+                ShareableI2c,
             >,
         > = {
             let pca9535_gpio = Pca9535GPIO {

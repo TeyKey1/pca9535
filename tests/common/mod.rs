@@ -4,8 +4,9 @@ extern crate pca9535;
 extern crate rppal;
 extern crate shared_bus;
 
+use embedded_hal::i2c::blocking::{Write, WriteRead};
 use lazy_static::lazy_static;
-use shared_bus::BusManager;
+use shared_bus::{BusManager, I2cProxy};
 use std::sync::Mutex;
 
 use pca9535::expander::SyncExpander;
@@ -14,6 +15,8 @@ use rppal::gpio::{Gpio, InputPin, OutputPin};
 use rppal::i2c::I2c;
 
 pub const ADDR: u8 = 33; //I2C address of IO Expander
+
+pub type ShareableI2c = I2cProxy<'static, Mutex<I2c>>;
 
 lazy_static! {
     pub static ref I2C_BUS: Mutex<&'static BusManager<Mutex<I2c>>> = {
@@ -57,12 +60,13 @@ pub struct RpiGPIO {
     pub _in1_7: InputPin,
 }
 
-pub struct Pca9535GPIO<'a, T>
+pub struct Pca9535GPIO<'a, T, I2C>
 where
-    T: SyncExpander,
+    T: SyncExpander<I2C>,
+    I2C: Write + WriteRead,
 {
-    pub _in0_3: ExpanderInputPin<'a, T>,
-    pub in0_4: ExpanderInputPin<'a, T>,
-    pub _out0_7: ExpanderOutputPin<'a, T>,
-    pub out1_5: ExpanderOutputPin<'a, T>,
+    pub _in0_3: ExpanderInputPin<'a, I2C, T>,
+    pub in0_4: ExpanderInputPin<'a, I2C, T>,
+    pub _out0_7: ExpanderOutputPin<'a, I2C, T>,
+    pub out1_5: ExpanderOutputPin<'a, I2C, T>,
 }

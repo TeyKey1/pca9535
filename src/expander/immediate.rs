@@ -17,7 +17,10 @@ where
     i2c: I2C,
 }
 
-impl<I2C: Write + WriteRead> Pca9535Immediate<I2C> {
+impl<I2C> Pca9535Immediate<I2C>
+where
+    I2C: Write + WriteRead,
+{
     ///Creates a new immediate PCA9535 instance.
     ///
     /// # Panics
@@ -29,11 +32,15 @@ impl<I2C: Write + WriteRead> Pca9535Immediate<I2C> {
     }
 }
 
-impl<I2C: Write + WriteRead> Expander<I2C> for Pca9535Immediate<I2C> {
+impl<I2C, E> Expander<I2C> for Pca9535Immediate<I2C>
+where
+    E: Debug,
+    I2C: Write<Error = E> + WriteRead<Error = E>,
+{
     /// Writes one byte to given register
     ///
     /// Only use this function if you really have to. The crate provides simpler ways of interacting with the device for most usecases.
-    fn write_byte(&mut self, register: Register, data: u8) -> Result<(), ExpanderError<I2C>> {
+    fn write_byte(&mut self, register: Register, data: u8) -> Result<(), ExpanderError<E>> {
         self.i2c
             .write(self.address, &[register as u8, data])
             .map_err(ExpanderError::WriteError)
@@ -42,7 +49,7 @@ impl<I2C: Write + WriteRead> Expander<I2C> for Pca9535Immediate<I2C> {
     /// Reads one byte of given register
     ///
     /// Only use this function if you really have to. The crate provides simpler ways of interacting with the device for most usecases.
-    fn read_byte(&mut self, register: Register, buffer: &mut u8) -> Result<(), ExpanderError<I2C>> {
+    fn read_byte(&mut self, register: Register, buffer: &mut u8) -> Result<(), ExpanderError<E>> {
         let mut buf = [0_u8];
 
         self.i2c
@@ -60,7 +67,7 @@ impl<I2C: Write + WriteRead> Expander<I2C> for Pca9535Immediate<I2C> {
     ///
     /// # Register pairs
     /// please see [`Register`] for more information about the register pairs and how they affect the halfword read and write functions.
-    fn write_halfword(&mut self, register: Register, data: u16) -> Result<(), ExpanderError<I2C>> {
+    fn write_halfword(&mut self, register: Register, data: u16) -> Result<(), ExpanderError<E>> {
         self.i2c
             .write(
                 self.address,
@@ -79,7 +86,7 @@ impl<I2C: Write + WriteRead> Expander<I2C> for Pca9535Immediate<I2C> {
         &mut self,
         register: Register,
         buffer: &mut u16,
-    ) -> Result<(), ExpanderError<I2C>> {
+    ) -> Result<(), ExpanderError<E>> {
         let mut reg_val: [u8; 2] = [0x00; 2];
 
         self.i2c
@@ -92,4 +99,9 @@ impl<I2C: Write + WriteRead> Expander<I2C> for Pca9535Immediate<I2C> {
     }
 }
 
-impl<I2C: Write + WriteRead + Debug> StandardExpanderInterface<I2C> for Pca9535Immediate<I2C> {}
+impl<I2C, E> StandardExpanderInterface<I2C, E> for Pca9535Immediate<I2C>
+where
+    E: Debug,
+    I2C: Write<Error = E> + WriteRead<Error = E>,
+{
+}

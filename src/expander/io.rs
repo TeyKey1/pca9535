@@ -20,8 +20,11 @@ where
     phantom_data_2: PhantomData<I2C>,
 }
 
-impl<I2C: Write + WriteRead, Em: ExpanderMutex<Ex>, Ex: Expander<I2C> + Send>
-    IoExpander<I2C, Ex, Em>
+impl<I2C, Em, Ex> IoExpander<I2C, Ex, Em>
+where
+    I2C: Write + WriteRead,
+    Em: ExpanderMutex<Ex>,
+    Ex: Expander<I2C> + Send,
 {
     /// Creates a new IoExpander instance out of an Expander.
     pub fn new(expander: Ex) -> IoExpander<I2C, Ex, Em> {
@@ -33,17 +36,32 @@ impl<I2C: Write + WriteRead, Em: ExpanderMutex<Ex>, Ex: Expander<I2C> + Send>
     }
 }
 
-impl<I2C: Write + WriteRead, Em: ExpanderMutex<Ex>, Ex: Expander<I2C> + Send> SyncExpander<I2C>
-    for IoExpander<I2C, Ex, Em>
+impl<I2C, Em, Ex> SyncExpander<I2C> for IoExpander<I2C, Ex, Em>
+where
+    I2C: Write + WriteRead,
+    Em: ExpanderMutex<Ex>,
+    Ex: Expander<I2C> + Send,
 {
-    fn write_byte(&self, register: Register, data: u8) -> Result<(), ExpanderError<I2C>> {
+    fn write_byte(
+        &self,
+        register: Register,
+        data: u8,
+    ) -> Result<(), ExpanderError<<I2C as Write>::Error>> {
         self.expander_mutex.lock(|ex| ex.write_byte(register, data))
     }
-    fn read_byte(&self, register: Register, buffer: &mut u8) -> Result<(), ExpanderError<I2C>> {
+    fn read_byte(
+        &self,
+        register: Register,
+        buffer: &mut u8,
+    ) -> Result<(), ExpanderError<<I2C as WriteRead>::Error>> {
         self.expander_mutex
             .lock(|ex| ex.read_byte(register, buffer))
     }
-    fn write_halfword(&self, register: Register, data: u16) -> Result<(), ExpanderError<I2C>> {
+    fn write_halfword(
+        &self,
+        register: Register,
+        data: u16,
+    ) -> Result<(), ExpanderError<<I2C as Write>::Error>> {
         self.expander_mutex
             .lock(|ex| ex.write_halfword(register, data))
     }
@@ -51,7 +69,7 @@ impl<I2C: Write + WriteRead, Em: ExpanderMutex<Ex>, Ex: Expander<I2C> + Send> Sy
         &self,
         register: Register,
         buffer: &mut u16,
-    ) -> Result<(), ExpanderError<I2C>> {
+    ) -> Result<(), ExpanderError<<I2C as WriteRead>::Error>> {
         self.expander_mutex
             .lock(|ex| ex.read_halfword(register, buffer))
     }

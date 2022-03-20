@@ -29,7 +29,12 @@ where
     configuration_port_1: u8,
 }
 
-impl<'a, I2C: Write + WriteRead, IP: InputPin> Pca9535Cached<'a, I2C, IP> {
+impl<'a, I2C, E, IP> Pca9535Cached<'a, I2C, IP>
+where
+    IP: InputPin,
+    E: Debug,
+    I2C: Write<Error = E> + WriteRead<Error = E>,
+{
     ///Creates a new cached PCA9535 instance.
     ///
     /// # Cached registers
@@ -43,7 +48,7 @@ impl<'a, I2C: Write + WriteRead, IP: InputPin> Pca9535Cached<'a, I2C, IP> {
         address: u8,
         interrupt_pin: &'a IP,
         init_defaults: bool,
-    ) -> Result<Self, ExpanderError<I2C>> {
+    ) -> Result<Self, ExpanderError<E>> {
         assert!(address > 31 && address < 40);
 
         let mut expander = Self {
@@ -68,7 +73,7 @@ impl<'a, I2C: Write + WriteRead, IP: InputPin> Pca9535Cached<'a, I2C, IP> {
     }
 
     /// Initializes the device's cache by reading out all the required registers of the device.
-    fn init_cache(expander: &mut Self) -> Result<(), ExpanderError<I2C>> {
+    fn init_cache(expander: &mut Self) -> Result<(), ExpanderError<E>> {
         let mut buf: [u8; 2] = [0x00, 0x00];
 
         expander
@@ -78,21 +83,21 @@ impl<'a, I2C: Write + WriteRead, IP: InputPin> Pca9535Cached<'a, I2C, IP> {
                 &[Register::ConfigurationPort0 as u8],
                 &mut buf,
             )
-            .map_err(ExpanderError::<I2C>::WriteReadError)?;
+            .map_err(ExpanderError::WriteReadError)?;
         expander.configuration_port_0 = buf[0];
         expander.configuration_port_1 = buf[1];
 
         expander
             .i2c
             .write_read(expander.address, &[Register::InputPort0 as u8], &mut buf)
-            .map_err(ExpanderError::<I2C>::WriteReadError)?;
+            .map_err(ExpanderError::WriteReadError)?;
         expander.input_port_0 = buf[0];
         expander.input_port_1 = buf[1];
 
         expander
             .i2c
             .write_read(expander.address, &[Register::OutputPort0 as u8], &mut buf)
-            .map_err(ExpanderError::<I2C>::WriteReadError)?;
+            .map_err(ExpanderError::WriteReadError)?;
         expander.output_port_0 = buf[0];
         expander.output_port_1 = buf[1];
 
@@ -103,7 +108,7 @@ impl<'a, I2C: Write + WriteRead, IP: InputPin> Pca9535Cached<'a, I2C, IP> {
                 &[Register::PolarityInversionPort0 as u8],
                 &mut buf,
             )
-            .map_err(ExpanderError::<I2C>::WriteReadError)?;
+            .map_err(ExpanderError::WriteReadError)?;
         expander.polarity_inversion_port_0 = buf[0];
         expander.polarity_inversion_port_1 = buf[1];
 
@@ -137,14 +142,19 @@ impl<'a, I2C: Write + WriteRead, IP: InputPin> Pca9535Cached<'a, I2C, IP> {
     }
 }
 
-impl<'a, I2C: Write + WriteRead, IP: InputPin> Expander<I2C> for Pca9535Cached<'a, I2C, IP> {
+impl<'a, I2C, E, IP> Expander<I2C> for Pca9535Cached<'a, I2C, IP>
+where
+    IP: InputPin,
+    E: Debug,
+    I2C: Write<Error = E> + WriteRead<Error = E>,
+{
     /// Writes one byte to given register
     ///
     /// Only use this function if you really have to. The crate provides simpler ways of interacting with the device for most usecases.
     ///
     /// # Cached
     /// If the bus write succeeds the written data is cached to avoid the need for bus traffic upon reading the written register.
-    fn write_byte(&mut self, register: Register, data: u8) -> Result<(), ExpanderError<I2C>> {
+    fn write_byte(&mut self, register: Register, data: u8) -> Result<(), ExpanderError<E>> {
         self.i2c
             .write(self.address, &[register as u8, data])
             .map_err(ExpanderError::WriteError)?;
@@ -176,7 +186,7 @@ impl<'a, I2C: Write + WriteRead, IP: InputPin> Expander<I2C> for Pca9535Cached<'
     ///
     /// # Cached
     /// This function only creates bus traffic in case the provided interrupt pin is held at a `low` voltage level at the time of the function call and the provided register is an input register. In that case the data is being read from the device, as the devices interrupt output indicates a data change. Otherwise the cached value is returned without causing any bus traffic.
-    fn read_byte(&mut self, register: Register, buffer: &mut u8) -> Result<(), ExpanderError<I2C>> {
+    fn read_byte(&mut self, register: Register, buffer: &mut u8) -> Result<(), ExpanderError<E>> {
         if self.interrupt_pin.is_low().unwrap() && register.is_input() {
             let mut buf = [0u8];
 
@@ -203,7 +213,7 @@ impl<'a, I2C: Write + WriteRead, IP: InputPin> Expander<I2C> for Pca9535Cached<'
     ///
     /// # Cached
     /// If the bus write succeeds the written data is cached to avoid the need for bus traffic upon reading the written register.
-    fn write_halfword(&mut self, register: Register, data: u16) -> Result<(), ExpanderError<I2C>> {
+    fn write_halfword(&mut self, register: Register, data: u16) -> Result<(), ExpanderError<E>> {
         self.i2c
             .write(
                 self.address,
@@ -256,7 +266,7 @@ impl<'a, I2C: Write + WriteRead, IP: InputPin> Expander<I2C> for Pca9535Cached<'
         &mut self,
         register: Register,
         buffer: &mut u16,
-    ) -> Result<(), ExpanderError<I2C>> {
+    ) -> Result<(), ExpanderError<E>> {
         let mut reg_val: [u8; 2] = [0x00; 2];
 
         if self.interrupt_pin.is_low().unwrap() && register.is_input() {
@@ -277,7 +287,10 @@ impl<'a, I2C: Write + WriteRead, IP: InputPin> Expander<I2C> for Pca9535Cached<'
     }
 }
 
-impl<'a, I2C: Write + WriteRead, IP: InputPin> StandardExpanderInterface<I2C>
-    for Pca9535Cached<'a, I2C, IP>
+impl<'a, I2C, E, IP> StandardExpanderInterface<I2C, E> for Pca9535Cached<'a, I2C, IP>
+where
+    IP: InputPin,
+    E: Debug,
+    I2C: Write<Error = E> + WriteRead<Error = E>,
 {
 }

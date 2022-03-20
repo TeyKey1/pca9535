@@ -1,4 +1,5 @@
 //! Implements the standard interface for all types implementing [`Expander`] trait.
+use core::fmt::Debug;
 
 use hal::i2c::blocking::{Write, WriteRead};
 
@@ -7,8 +8,12 @@ use super::{Expander, ExpanderError, GPIOBank, Register};
 /// Standard expander interface not using [`hal`].
 ///
 /// This interface does not track the state of the pins! Therefore, the user needs to ensure the pins are in input or output configuration before proceeding to call functions related to input or output pins. Otherwise, the results of those functions might not cause the expected behavior of the device.
-pub trait StandardExpanderInterface<I2C: Write + WriteRead>: Expander<I2C> {
-    fn pin_set_high(&mut self, bank: GPIOBank, pin: u8) -> Result<(), ExpanderError<I2C>> {
+pub trait StandardExpanderInterface<I2C, E>: Expander<I2C>
+where
+    E: Debug,
+    I2C: Write<Error = E> + WriteRead<Error = E>,
+{
+    fn pin_set_high(&mut self, bank: GPIOBank, pin: u8) -> Result<(), ExpanderError<E>> {
         assert!(pin < 8);
 
         let register = match bank {
@@ -27,7 +32,7 @@ pub trait StandardExpanderInterface<I2C: Write + WriteRead>: Expander<I2C> {
     ///
     /// # Panics
     /// The function will panic if the provided pin is not in the allowed range of 0-7
-    fn pin_set_low(&mut self, bank: GPIOBank, pin: u8) -> Result<(), ExpanderError<I2C>> {
+    fn pin_set_low(&mut self, bank: GPIOBank, pin: u8) -> Result<(), ExpanderError<E>> {
         assert!(pin < 8);
 
         let register = match bank {
@@ -48,7 +53,7 @@ pub trait StandardExpanderInterface<I2C: Write + WriteRead>: Expander<I2C> {
     ///
     /// # Panics
     /// The function will panic if the provided pin is not in the allowed range of 0-7
-    fn pin_is_high(&mut self, bank: GPIOBank, pin: u8) -> Result<bool, ExpanderError<I2C>> {
+    fn pin_is_high(&mut self, bank: GPIOBank, pin: u8) -> Result<bool, ExpanderError<E>> {
         assert!(pin < 8);
 
         let register = match bank {
@@ -72,7 +77,7 @@ pub trait StandardExpanderInterface<I2C: Write + WriteRead>: Expander<I2C> {
     ///
     /// # Panics
     /// The function will panic if the provided pin is not in the allowed range of 0-7
-    fn pin_is_low(&mut self, bank: GPIOBank, pin: u8) -> Result<bool, ExpanderError<I2C>> {
+    fn pin_is_low(&mut self, bank: GPIOBank, pin: u8) -> Result<bool, ExpanderError<E>> {
         assert!(pin < 8);
 
         let register = match bank {
@@ -94,7 +99,7 @@ pub trait StandardExpanderInterface<I2C: Write + WriteRead>: Expander<I2C> {
     ///
     /// # Panics
     /// The function will panic if the provided pin is not in the allowed range of 0-7
-    fn pin_into_input(&mut self, bank: GPIOBank, pin: u8) -> Result<(), ExpanderError<I2C>> {
+    fn pin_into_input(&mut self, bank: GPIOBank, pin: u8) -> Result<(), ExpanderError<E>> {
         assert!(pin < 8);
 
         let register = match bank {
@@ -113,7 +118,7 @@ pub trait StandardExpanderInterface<I2C: Write + WriteRead>: Expander<I2C> {
     ///
     /// # Panics
     /// The function will panic if the provided pin is not in the allowed range of 0-7
-    fn pin_into_output(&mut self, bank: GPIOBank, pin: u8) -> Result<(), ExpanderError<I2C>> {
+    fn pin_into_output(&mut self, bank: GPIOBank, pin: u8) -> Result<(), ExpanderError<E>> {
         assert!(pin < 8);
 
         let register = match bank {
@@ -134,7 +139,7 @@ pub trait StandardExpanderInterface<I2C: Write + WriteRead>: Expander<I2C> {
     ///
     /// # Panics
     /// The function will panic if the provided pin is not in the allowed range of 0-7
-    fn pin_inverse_polarity(&mut self, bank: GPIOBank, pin: u8) -> Result<(), ExpanderError<I2C>> {
+    fn pin_inverse_polarity(&mut self, bank: GPIOBank, pin: u8) -> Result<(), ExpanderError<E>> {
         assert!(pin < 8);
 
         let register = match bank {
@@ -155,7 +160,7 @@ pub trait StandardExpanderInterface<I2C: Write + WriteRead>: Expander<I2C> {
     ///
     /// # Panics
     /// The function will panic if the provided pin is not in the allowed range of 0-7
-    fn pin_normal_polarity(&mut self, bank: GPIOBank, pin: u8) -> Result<(), ExpanderError<I2C>> {
+    fn pin_normal_polarity(&mut self, bank: GPIOBank, pin: u8) -> Result<(), ExpanderError<E>> {
         assert!(pin < 8);
 
         let register = match bank {
@@ -173,14 +178,14 @@ pub trait StandardExpanderInterface<I2C: Write + WriteRead>: Expander<I2C> {
     /// Sets the input polarity of all pins to inverted.
     ///
     /// A logic high voltage applied at an input pin results in a `0` written to the devices input register and thus being registered as `low` by the driver.
-    fn inverse_polarity(&mut self) -> Result<(), ExpanderError<I2C>> {
+    fn inverse_polarity(&mut self) -> Result<(), ExpanderError<E>> {
         self.write_halfword(Register::PolarityInversionPort0, 0xFFFF_u16)
     }
 
     /// Sets the input polarity of all pins to normal.
     ///
     /// A logic high voltage applied at an input pin results in a `1` written to the devices input register and thus being registered as `high` by the driver.
-    fn normal_polarity(&mut self) -> Result<(), ExpanderError<I2C>> {
+    fn normal_polarity(&mut self) -> Result<(), ExpanderError<E>> {
         self.write_halfword(Register::PolarityInversionPort0, 0x0_u16)
     }
 }

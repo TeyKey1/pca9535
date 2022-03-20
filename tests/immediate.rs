@@ -1,16 +1,16 @@
 mod common;
 
-use common::{ADDR, I2C_BUS};
+use common::{ShareableI2c, ADDR, I2C_BUS};
 
 use lazy_static::lazy_static;
-use rppal::i2c::I2c;
-use shared_bus::I2cProxy;
 use std::sync::Mutex;
 
 use pca9535::{Expander, Pca9535Immediate, Register};
 
+pub type ImmediateExpander = Pca9535Immediate<ShareableI2c>;
+
 lazy_static! {
-    static ref EXPANDER: Mutex<Pca9535Immediate<I2cProxy<'static, Mutex<I2c>>>> = {
+    static ref EXPANDER: Mutex<ImmediateExpander> = {
         let i2c_bus = *I2C_BUS.lock().unwrap();
         let expander = Pca9535Immediate::new(i2c_bus.acquire_i2c(), ADDR);
 
@@ -191,11 +191,11 @@ mod standard {
 
 #[cfg(test)]
 mod pin {
-    use super::common::{Pca9535GPIO, ADDR, I2C_BUS, RPI_GPIO};
+    use super::common::{Pca9535GPIO, ShareableI2c, ADDR, I2C_BUS, RPI_GPIO};
+    use super::ImmediateExpander;
 
     use lazy_static::lazy_static;
     use serial_test::serial;
-    use shared_bus::I2cProxy;
     use std::sync::Mutex;
 
     use embedded_hal::digital::blocking::{
@@ -204,13 +204,9 @@ mod pin {
     use pca9535::{
         ExpanderInputPin, ExpanderOutputPin, GPIOBank, IoExpander, Pca9535Immediate, PinState,
     };
-    use rppal::i2c::I2c;
 
     lazy_static! {
-        static ref IO_EXPANDER: IoExpander<
-            Mutex<Pca9535Immediate<I2cProxy<'static, Mutex<I2c>>>>,
-            Pca9535Immediate<I2cProxy<'static, Mutex<I2c>>>,
-        > = {
+        static ref IO_EXPANDER: IoExpander<ShareableI2c, ImmediateExpander, Mutex<ImmediateExpander>> = {
             let i2c_bus = *I2C_BUS.lock().unwrap();
             let expander = Pca9535Immediate::new(i2c_bus.acquire_i2c(), ADDR);
 
@@ -219,10 +215,8 @@ mod pin {
         static ref PCA9535_GPIO: Mutex<
             Pca9535GPIO<
                 'static,
-                IoExpander<
-                    Mutex<Pca9535Immediate<I2cProxy<'static, Mutex<I2c>>>>,
-                    Pca9535Immediate<I2cProxy<'static, Mutex<I2c>>>,
-                >,
+                IoExpander<ShareableI2c, ImmediateExpander, Mutex<ImmediateExpander>>,
+                ShareableI2c,
             >,
         > = {
             let pca9535_gpio = Pca9535GPIO {

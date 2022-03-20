@@ -13,7 +13,10 @@ where
 }
 
 #[cfg(feature = "std")]
-impl<Ex: Send> ExpanderMutex<Ex> for std::sync::Mutex<Ex> {
+impl<Ex> ExpanderMutex<Ex> for std::sync::Mutex<Ex>
+where
+    Ex: Send,
+{
     fn lock<R, C: FnOnce(&mut Ex) -> R>(&self, c: C) -> R {
         let mut expander = self.lock().unwrap();
         c(&mut expander)
