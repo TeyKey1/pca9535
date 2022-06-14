@@ -1,5 +1,5 @@
 # PCA9535
-[![crates.io](https://img.shields.io/crates/v/pca9535)](https://crates.io/crates/pca9535) [![documentation](https://docs.rs/pca9535/badge.svg)](https://docs.rs/pca9535) [![license](https://img.shields.io/crates/l/pca9535.svg)](./LICENSE)
+[![crates.io](https://img.shields.io/crates/v/pca9535?style=flat-square)](https://crates.io/crates/pca9535) [![documentation](https://img.shields.io/docsrs/pca9535/latest?style=flat-square)](https://docs.rs/pca9535) [![license](https://img.shields.io/crates/l/pca9535.svg?style=flat-square)](./LICENSE)
 
 PCA9535 IO-Expander driver using embedded-hal.
 
@@ -59,5 +59,5 @@ if input_pin.is_high().unwrap() {
     output_pin.set_high().unwrap();
 }
 ```
-
-[##Changelog](./CHANGELOG.md)
+## Changelog
+See [CHANGELOG.md](./CHANGELOG.md) or release page for details.
