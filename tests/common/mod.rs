@@ -1,10 +1,4 @@
-extern crate embedded_hal;
-extern crate lazy_static;
-extern crate pca9535;
-extern crate rppal;
-extern crate shared_bus;
-
-use embedded_hal::i2c::blocking::{Write, WriteRead};
+use hal::i2c::blocking::{Write, WriteRead};
 use lazy_static::lazy_static;
 use shared_bus::{BusManager, I2cProxy};
 use std::sync::Mutex;

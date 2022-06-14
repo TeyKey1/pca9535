@@ -1,5 +1,4 @@
 //! Contains the implementation of the Immediate Expander interface.
-
 use core::fmt::Debug;
 
 use hal::i2c::blocking::{Write, WriteRead};
@@ -21,7 +20,7 @@ impl<I2C> Pca9535Immediate<I2C>
 where
     I2C: Write + WriteRead,
 {
-    ///Creates a new immediate PCA9535 instance.
+    /// Creates a new immediate PCA9535 instance.
     ///
     /// # Panics
     /// If given device hardware address is outside of the permittable range of `32-39`.

@@ -1,5 +1,4 @@
 //! Contains the implementation to make an [`Expander`] Sync.
-
 use core::marker::PhantomData;
 
 use hal::i2c::blocking::{Write, WriteRead};
@@ -9,6 +8,7 @@ use crate::ExpanderMutex;
 
 /// A wrapper struct to make an Expander Sync.
 /// This Expander type can be used to generate [`crate::ExpanderInputPin`] or [`crate::ExpanderOutputPin`].
+#[derive(Debug)]
 pub struct IoExpander<I2C, Ex, Em>
 where
     I2C: Write + WriteRead,

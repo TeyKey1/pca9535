@@ -1,7 +1,4 @@
 //! Contains the implementation of the hal-pin usage inteface.
-
-extern crate alloc;
-
 use core::marker::PhantomData;
 
 use hal::digital::blocking::{InputPin, IoPin, OutputPin};
@@ -18,6 +15,7 @@ use super::Register;
 /// Single input device pin implementing [`InputPin`] and [`IoPin`] trait.
 ///
 /// The [`ExpanderInputPin`] instance can be used with other pieces of software using [`hal`].
+#[derive(Debug)]
 pub struct ExpanderInputPin<'a, I2C, Io>
 where
     I2C: Write + WriteRead,
@@ -32,6 +30,7 @@ where
 /// Single output device pin implementing [`OutputPin`] and [`IoPin`] trait.
 ///
 /// The [`ExpanderInputPin`] instance can be used with other pieces of software using [`hal`].
+#[derive(Debug)]
 pub struct ExpanderOutputPin<'a, I2C, Io>
 where
     I2C: Write + WriteRead,

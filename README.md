@@ -59,3 +59,5 @@ if input_pin.is_high().unwrap() {
     output_pin.set_high().unwrap();
 }
 ```
+
+[##Changelog](./CHANGELOG.md)

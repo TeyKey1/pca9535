@@ -1,5 +1,4 @@
 //! Contains all available Expander interfaces and traits.
-
 use core::fmt::Debug;
 
 use hal::i2c::blocking::{Write, WriteRead};

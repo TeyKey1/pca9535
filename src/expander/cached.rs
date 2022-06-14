@@ -1,5 +1,4 @@
 //! Contains the implementation of the Cached Expander interface.
-
 use core::fmt::Debug;
 
 use hal::digital::blocking::InputPin;
@@ -35,10 +34,13 @@ where
     E: Debug,
     I2C: Write<Error = E> + WriteRead<Error = E>,
 {
-    ///Creates a new cached PCA9535 instance.
+    /// Creates a new cached PCA9535 instance.
     ///
     /// # Cached registers
-    /// The init_defaults argument assumes the default values for all the registers of the device if set to `true` (Default register condition after device startup, see the device's documentation for more information). In that case no bus transaction is created to verify if this is actually the case on the device. Only use this option if you have not made any transactions with the device before creating this expander struct, otherwise you might encounter unexpected behavior of the device!
+    /// The init_defaults argument assumes the default values for all the registers of the device if set to `true` (Default register condition after device startup, see the device's documentation for more information).
+    /// In that case no bus transaction is created to verify if this is actually the case on the device. Only use this option if you have not made any transactions with the device before creating this expander struct,
+    /// otherwise you might encounter unexpected behavior of the device!
+    ///
     /// If the device was used before calling this function and should keep its state you should set init_defaults to `false`. This triggers a bus transaction to read out all the devices' registers and caches the received values.
     ///
     /// # Panics
@@ -221,7 +223,8 @@ where
             )
             .map_err(ExpanderError::WriteError)?;
 
-        // As the IO Expander does not trigger an interrupt once the polarity inversion register value changes, writes to the polarity inversion registers need a special implementation in order to ensure that the input register cache stays up to date.
+        // As the IO Expander does not trigger an interrupt once the polarity inversion register value changes, writes to the polarity inversion registers need a special implementation
+        // in order to ensure that the input register cache stays up to date.
         if register.is_polarity_inversion() {
             let input_mask_1 = self.get_cached(register) ^ (data >> 8) as u8;
             let input_mask_2 = self.get_cached(register.get_neighbor()) ^ data as u8;
@@ -261,7 +264,9 @@ where
     /// please see [`Register`] for more information about the register pairs and how they affect the halfword read and write functions.
     ///
     /// # Cached
-    /// This function only creates bus traffic in case the provided interrupt pin is held at a `low` voltage level at the time of the function call and the provided register is an input register. In that case the data is being read from the device, as the devices interrupt output indicates a data change. Otherwise the cached value is returned without causing any bus traffic.
+    /// This function only creates bus traffic in case the provided interrupt pin is held at a `low` voltage level at the time of the function call and the provided
+    /// register is an input register. In that case the data is being read from the device, as the devices interrupt output indicates a data change.
+    /// Otherwise the cached value is returned without causing any bus traffic.
     fn read_halfword(
         &mut self,
         register: Register,

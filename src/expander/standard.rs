@@ -7,7 +7,8 @@ use super::{Expander, ExpanderError, GPIOBank, Register};
 
 /// Standard expander interface not using [`hal`].
 ///
-/// This interface does not track the state of the pins! Therefore, the user needs to ensure the pins are in input or output configuration before proceeding to call functions related to input or output pins. Otherwise, the results of those functions might not cause the expected behavior of the device.
+/// This interface does not track the state of the pins! Therefore, the user needs to ensure the pins are in input or output configuration before
+/// proceeding to call functions related to input or output pins. Otherwise the results of those functions might not cause the expected behavior of the device.
 pub trait StandardExpanderInterface<I2C, E>: Expander<I2C>
 where
     E: Debug,
@@ -49,7 +50,8 @@ where
 
     /// Checks if input state of given pin is `high`. This function works with pins configured as inputs as well as outputs.
     ///
-    /// The function result does not necessarily represent the logic level of the applied voltage at the given pin but the value inside the input register of the device. Which is `1` or `0` Depending on the current polarity inversion configuration of the pin.
+    /// The function result does not necessarily represent the logic level of the applied voltage at the given pin but the value inside the input register of the device.
+    /// Which is `1` or `0` Depending on the current polarity inversion configuration of the pin.
     ///
     /// # Panics
     /// The function will panic if the provided pin is not in the allowed range of 0-7
@@ -73,7 +75,8 @@ where
 
     /// Checks if input state of given pin is `low`. This function works with pins configured as inputs as well as outputs.
     ///
-    /// The function result does not necessarily represent the logic level of the applied voltage at the given pin but the value inside the input register of the device. Which is `1` or `0` Depending on the current polarity inversion configuration of the pin.
+    /// The function result does not necessarily represent the logic level of the applied voltage at the given pin but the value inside the input register of the device.
+    /// Which is `1` or `0` Depending on the current polarity inversion configuration of the pin.
     ///
     /// # Panics
     /// The function will panic if the provided pin is not in the allowed range of 0-7

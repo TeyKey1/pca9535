@@ -80,8 +80,8 @@ mod standard {
 
         rpi_gpio.out1_0.set_high();
 
-        assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap(), true);
-        assert_eq!(expander.pin_is_low(GPIOBank::Bank1, 0).unwrap(), false);
+        assert!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap());
+        assert!(!expander.pin_is_low(GPIOBank::Bank1, 0).unwrap());
     }
 
     #[test]
@@ -94,8 +94,8 @@ mod standard {
 
         rpi_gpio.out1_0.set_high();
 
-        assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap(), true);
-        assert_eq!(expander.pin_is_low(GPIOBank::Bank1, 0).unwrap(), false);
+        assert!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap());
+        assert!(!expander.pin_is_low(GPIOBank::Bank1, 0).unwrap());
     }
 
     #[test]
@@ -109,7 +109,7 @@ mod standard {
 
         expander.pin_set_high(GPIOBank::Bank1, 6).unwrap();
 
-        assert_eq!(rpi_gpio.in1_6.is_high(), true);
+        assert!(rpi_gpio.in1_6.is_high());
     }
 
     #[test]
@@ -123,7 +123,7 @@ mod standard {
 
         expander.pin_set_low(GPIOBank::Bank1, 6).unwrap();
 
-        assert_eq!(rpi_gpio.in1_6.is_low(), true);
+        assert!(rpi_gpio.in1_6.is_low());
     }
 
     #[test]
@@ -137,21 +137,21 @@ mod standard {
 
         expander.pin_inverse_polarity(GPIOBank::Bank1, 0).unwrap();
 
-        assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap(), false);
+        assert!(!expander.pin_is_high(GPIOBank::Bank1, 0).unwrap());
 
         expander.pin_normal_polarity(GPIOBank::Bank1, 0).unwrap();
 
-        assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap(), true);
+        assert!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap());
 
         rpi_gpio.out1_0.set_low();
 
         expander.pin_inverse_polarity(GPIOBank::Bank1, 0).unwrap();
 
-        assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap(), true);
+        assert!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap());
 
         expander.pin_normal_polarity(GPIOBank::Bank1, 0).unwrap();
 
-        assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap(), false);
+        assert!(!expander.pin_is_high(GPIOBank::Bank1, 0).unwrap());
     }
 
     #[test]
@@ -167,25 +167,25 @@ mod standard {
 
         expander.inverse_polarity().unwrap();
 
-        assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap(), false);
-        assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 1).unwrap(), false);
+        assert!(!expander.pin_is_high(GPIOBank::Bank1, 0).unwrap());
+        assert!(!expander.pin_is_high(GPIOBank::Bank1, 1).unwrap());
 
         expander.normal_polarity().unwrap();
 
-        assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap(), true);
-        assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 1).unwrap(), true);
+        assert!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap());
+        assert!(expander.pin_is_high(GPIOBank::Bank1, 1).unwrap());
 
         rpi_gpio.out1_0.set_low();
 
         expander.inverse_polarity().unwrap();
 
-        assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap(), true);
-        assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 1).unwrap(), false);
+        assert!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap());
+        assert!(!expander.pin_is_high(GPIOBank::Bank1, 1).unwrap());
 
         expander.normal_polarity().unwrap();
 
-        assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 0).unwrap(), false);
-        assert_eq!(expander.pin_is_high(GPIOBank::Bank1, 1).unwrap(), true);
+        assert!(!expander.pin_is_high(GPIOBank::Bank1, 0).unwrap());
+        assert!(expander.pin_is_high(GPIOBank::Bank1, 1).unwrap());
     }
 }
 
@@ -198,12 +198,18 @@ mod pin {
     use serial_test::serial;
     use std::sync::Mutex;
 
-    use embedded_hal::digital::blocking::{
-        InputPin as HalInputPin, IoPin, OutputPin as HalOutputPin,
-    };
+    use hal::digital::blocking::{InputPin as HalInputPin, IoPin, OutputPin as HalOutputPin};
     use pca9535::{
         ExpanderInputPin, ExpanderOutputPin, GPIOBank, IoExpander, Pca9535Immediate, PinState,
     };
+
+    type Pca9535Gpio = Mutex<
+        Pca9535GPIO<
+            'static,
+            IoExpander<ShareableI2c, ImmediateExpander, Mutex<ImmediateExpander>>,
+            ShareableI2c,
+        >,
+    >;
 
     lazy_static! {
         static ref IO_EXPANDER: IoExpander<ShareableI2c, ImmediateExpander, Mutex<ImmediateExpander>> = {
@@ -212,13 +218,7 @@ mod pin {
 
             IoExpander::new(expander)
         };
-        static ref PCA9535_GPIO: Mutex<
-            Pca9535GPIO<
-                'static,
-                IoExpander<ShareableI2c, ImmediateExpander, Mutex<ImmediateExpander>>,
-                ShareableI2c,
-            >,
-        > = {
+        static ref PCA9535_GPIO: Pca9535Gpio = {
             let pca9535_gpio = Pca9535GPIO {
                 _in0_3: ExpanderInputPin::new(&*IO_EXPANDER, GPIOBank::Bank0, 3).unwrap(),
                 in0_4: ExpanderInputPin::new(&*IO_EXPANDER, GPIOBank::Bank0, 4).unwrap(),
@@ -240,7 +240,7 @@ mod pin {
 
         rpi_gpio.out0_4.set_high();
 
-        assert_eq!(pca9535_gpio.in0_4.is_high().unwrap(), true);
+        assert!(pca9535_gpio.in0_4.is_high().unwrap());
     }
 
     #[test]
@@ -251,7 +251,7 @@ mod pin {
 
         rpi_gpio.out0_4.set_low();
 
-        assert_eq!(pca9535_gpio.in0_4.is_low().unwrap(), true);
+        assert!(pca9535_gpio.in0_4.is_low().unwrap());
     }
 
     #[test]
@@ -262,7 +262,7 @@ mod pin {
 
         pca9535_gpio.out1_5.set_low().unwrap();
 
-        assert_eq!(rpi_gpio.in1_5.is_low(), true);
+        assert!(rpi_gpio.in1_5.is_low());
     }
 
     #[test]
@@ -273,7 +273,7 @@ mod pin {
 
         pca9535_gpio.out1_5.set_high().unwrap();
 
-        assert_eq!(rpi_gpio.in1_5.is_high(), true);
+        assert!(rpi_gpio.in1_5.is_high());
     }
 
     #[test]
@@ -288,13 +288,13 @@ mod pin {
 
         input_to_output.set_high().unwrap();
 
-        assert_eq!(rpi_gpio.in0_3.is_high(), true);
+        assert!(rpi_gpio.in0_3.is_high());
 
         rpi_gpio.out0_7.set_high();
 
         let output_to_input = output_pin.into_input_pin().unwrap();
 
-        assert_eq!(output_to_input.is_high().unwrap(), true);
+        assert!(output_to_input.is_high().unwrap());
 
         output_to_input.into_output_pin(PinState::Low).unwrap();
         input_to_output.into_input_pin().unwrap();
