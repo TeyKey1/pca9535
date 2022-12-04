@@ -1,7 +1,7 @@
 //! Contains the implementation of the Immediate Expander interface.
 use core::fmt::Debug;
 
-use hal::i2c::blocking::{Write, WriteRead};
+use hal::i2c::I2c;
 
 use crate::StandardExpanderInterface;
 
@@ -10,7 +10,7 @@ use super::{Expander, ExpanderError, Register};
 #[derive(Debug)]
 pub struct Pca9535Immediate<I2C>
 where
-    I2C: Write + WriteRead,
+    I2C: I2c,
 {
     address: u8,
     i2c: I2C,
@@ -18,7 +18,7 @@ where
 
 impl<I2C> Pca9535Immediate<I2C>
 where
-    I2C: Write + WriteRead,
+    I2C: I2c,
 {
     /// Creates a new immediate PCA9535 instance.
     ///
@@ -34,7 +34,7 @@ where
 impl<I2C, E> Expander<I2C> for Pca9535Immediate<I2C>
 where
     E: Debug,
-    I2C: Write<Error = E> + WriteRead<Error = E>,
+    I2C: I2c<Error = E>,
 {
     /// Writes one byte to given register
     ///
@@ -101,6 +101,6 @@ where
 impl<I2C, E> StandardExpanderInterface<I2C, E> for Pca9535Immediate<I2C>
 where
     E: Debug,
-    I2C: Write<Error = E> + WriteRead<Error = E>,
+    I2C: I2c<Error = E>,
 {
 }

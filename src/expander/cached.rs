@@ -1,8 +1,8 @@
 //! Contains the implementation of the Cached Expander interface.
 use core::fmt::Debug;
 
-use hal::digital::blocking::InputPin;
-use hal::i2c::blocking::{Write, WriteRead};
+use hal::digital::InputPin;
+use hal::i2c::I2c;
 
 use crate::StandardExpanderInterface;
 
@@ -11,7 +11,7 @@ use super::{Expander, ExpanderError, Register};
 #[derive(Debug)]
 pub struct Pca9535Cached<'a, I2C, IP>
 where
-    I2C: Write + WriteRead,
+    I2C: I2c,
     IP: InputPin,
 {
     address: u8,
@@ -32,7 +32,7 @@ impl<'a, I2C, E, IP> Pca9535Cached<'a, I2C, IP>
 where
     IP: InputPin,
     E: Debug,
-    I2C: Write<Error = E> + WriteRead<Error = E>,
+    I2C: I2c<Error = E>,
 {
     /// Creates a new cached PCA9535 instance.
     ///
@@ -144,11 +144,11 @@ where
     }
 }
 
-impl<'a, I2C, E, IP> Expander<I2C> for Pca9535Cached<'a, I2C, IP>
+impl<'a, I2C, IP, E> Expander<I2C> for Pca9535Cached<'a, I2C, IP>
 where
     IP: InputPin,
-    E: Debug,
-    I2C: Write<Error = E> + WriteRead<Error = E>,
+    I2C: I2c<Error = E>,
+    E: core::fmt::Debug,
 {
     /// Writes one byte to given register
     ///
@@ -296,6 +296,6 @@ impl<'a, I2C, E, IP> StandardExpanderInterface<I2C, E> for Pca9535Cached<'a, I2C
 where
     IP: InputPin,
     E: Debug,
-    I2C: Write<Error = E> + WriteRead<Error = E>,
+    I2C: I2c<Error = E>,
 {
 }

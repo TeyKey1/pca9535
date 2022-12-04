@@ -14,13 +14,11 @@ license = "MIT"
 std = []
 
 [dependencies]
-hal = { version = "=1.0.0-alpha.5", package = "embedded-hal" }
+hal = { version = "=1.0.0-alpha.9", package = "embedded-hal" }
 
 [dev-dependencies]
 lazy_static = "1.4"
 pca9535 = { path = ".", features = ["std"] }
-rppal = { version = "0.13.0", features = ["hal"] }
+rppal = { version = "0.14.1", features = ["hal"] }
 serial_test = "0.6"
-shared-bus = { git = "https://github.com/TeyKey1/shared-bus.git", rev = "046dc03", features = [
-    "std",
-] }
+shared-bus = { version = "0.2.5", features = ["std",] }

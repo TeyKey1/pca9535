@@ -1,7 +1,7 @@
 //! Contains all available Expander interfaces and traits.
 use core::fmt::Debug;
 
-use hal::i2c::blocking::{Write, WriteRead};
+use hal::i2c::{ErrorType, I2c};
 
 use super::{GPIOBank, Register};
 
@@ -13,55 +13,56 @@ pub mod standard;
 /// Trait for standard IO expanders which are not Sync
 pub trait Expander<I2C>
 where
-    I2C: Write + WriteRead,
+    I2C: I2c,
 {
     fn write_byte(
         &mut self,
         register: Register,
         data: u8,
-    ) -> Result<(), ExpanderError<<I2C as Write>::Error>>;
+    ) -> Result<(), ExpanderError<<I2C as ErrorType>::Error>>;
+
     fn read_byte(
         &mut self,
         register: Register,
         buffer: &mut u8,
-    ) -> Result<(), ExpanderError<<I2C as WriteRead>::Error>>;
+    ) -> Result<(), ExpanderError<<I2C as ErrorType>::Error>>;
     fn write_halfword(
         &mut self,
         register: Register,
         data: u16,
-    ) -> Result<(), ExpanderError<<I2C as Write>::Error>>;
+    ) -> Result<(), ExpanderError<<I2C as ErrorType>::Error>>;
     fn read_halfword(
         &mut self,
         register: Register,
         buffer: &mut u16,
-    ) -> Result<(), ExpanderError<<I2C as WriteRead>::Error>>;
+    ) -> Result<(), ExpanderError<<I2C as ErrorType>::Error>>;
 }
 
 /// Trait for IO expanders which use some synchronization primitive for the writes and reads. This implementation makes the expander sync and usable accross threads etc.
 pub trait SyncExpander<I2C>
 where
-    I2C: Write + WriteRead,
+    I2C: I2c,
 {
     fn write_byte(
         &self,
         register: Register,
         data: u8,
-    ) -> Result<(), ExpanderError<<I2C as Write>::Error>>;
+    ) -> Result<(), ExpanderError<<I2C as ErrorType>::Error>>;
     fn read_byte(
         &self,
         register: Register,
         buffer: &mut u8,
-    ) -> Result<(), ExpanderError<<I2C as WriteRead>::Error>>;
+    ) -> Result<(), ExpanderError<<I2C as ErrorType>::Error>>;
     fn write_halfword(
         &self,
         register: Register,
         data: u16,
-    ) -> Result<(), ExpanderError<<I2C as Write>::Error>>;
+    ) -> Result<(), ExpanderError<<I2C as ErrorType>::Error>>;
     fn read_halfword(
         &self,
         register: Register,
         buffer: &mut u16,
-    ) -> Result<(), ExpanderError<<I2C as WriteRead>::Error>>;
+    ) -> Result<(), ExpanderError<<I2C as ErrorType>::Error>>;
 }
 
 #[derive(Debug)]
