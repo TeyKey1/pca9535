@@ -68,7 +68,7 @@ where
 #[derive(Debug)]
 pub enum ExpanderError<ERR>
 where
-    ERR: core::fmt::Debug,
+    ERR: Debug,
 {
     WriteError(ERR),
     WriteReadError(ERR),
