@@ -9,14 +9,14 @@ use crate::StandardExpanderInterface;
 use super::{Expander, ExpanderError, Register};
 
 #[derive(Debug)]
-pub struct Pca9535Cached<'a, I2C, IP>
+pub struct Pca9535Cached<I2C, IP>
 where
     I2C: I2c,
     IP: InputPin,
 {
     address: u8,
     i2c: I2C,
-    interrupt_pin: &'a IP,
+    interrupt_pin: IP,
 
     input_port_0: u8,
     input_port_1: u8,
@@ -28,7 +28,7 @@ where
     configuration_port_1: u8,
 }
 
-impl<'a, I2C, E, IP> Pca9535Cached<'a, I2C, IP>
+impl<I2C, E, IP> Pca9535Cached<I2C, IP>
 where
     IP: InputPin,
     E: Debug,
@@ -48,7 +48,7 @@ where
     pub fn new(
         i2c: I2C,
         address: u8,
-        interrupt_pin: &'a IP,
+        interrupt_pin: IP,
         init_defaults: bool,
     ) -> Result<Self, ExpanderError<E>> {
         assert!(address > 31 && address < 40);
@@ -144,7 +144,7 @@ where
     }
 }
 
-impl<'a, I2C, IP, E> Expander<I2C> for Pca9535Cached<'a, I2C, IP>
+impl<I2C, IP, E> Expander<I2C> for Pca9535Cached<I2C, IP>
 where
     IP: InputPin,
     I2C: I2c<Error = E>,
@@ -292,7 +292,7 @@ where
     }
 }
 
-impl<'a, I2C, E, IP> StandardExpanderInterface<I2C, E> for Pca9535Cached<'a, I2C, IP>
+impl<I2C, E, IP> StandardExpanderInterface<I2C, E> for Pca9535Cached<I2C, IP>
 where
     IP: InputPin,
     E: Debug,
