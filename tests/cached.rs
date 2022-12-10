@@ -10,7 +10,7 @@ use std::sync::Mutex;
 
 use pca9535::{Expander, Pca9535Cached, Register};
 
-pub type CachedExpander = Pca9535Cached<'static, ShareableI2c, InputPin>;
+pub type CachedExpander = Pca9535Cached<ShareableI2c, &'static InputPin>;
 
 lazy_static! {
     static ref INTERRUPT_PIN: InputPin = {
@@ -216,7 +216,7 @@ mod pin {
     use serial_test::serial;
     use std::sync::Mutex;
 
-    use hal::digital::blocking::{InputPin as HalInputPin, IoPin, OutputPin as HalOutputPin};
+    use hal::digital::{InputPin as HalInputPin, OutputPin as HalOutputPin};
     use pca9535::{
         ExpanderInputPin, ExpanderOutputPin, GPIOBank, IoExpander, Pca9535Cached, PinState,
     };
@@ -226,6 +226,7 @@ mod pin {
             'static,
             IoExpander<ShareableI2c, CachedExpander, Mutex<CachedExpander>>,
             ShareableI2c,
+            rppal::i2c::Error,
         >,
     >;
 
@@ -293,29 +294,5 @@ mod pin {
         pca9535_gpio.out1_5.set_high().unwrap();
 
         assert!(rpi_gpio.in1_5.is_high());
-    }
-
-    #[test]
-    #[serial(cached_pin)]
-    fn pin_conversion() {
-        let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
-        let input_pin = ExpanderInputPin::new(&*IO_EXPANDER, GPIOBank::Bank0, 3).unwrap();
-        let output_pin =
-            ExpanderOutputPin::new(&*IO_EXPANDER, GPIOBank::Bank0, 7, PinState::High).unwrap();
-
-        let mut input_to_output = input_pin.into_output_pin(PinState::Low).unwrap();
-
-        input_to_output.set_high().unwrap();
-
-        assert!(rpi_gpio.in0_3.is_high());
-
-        rpi_gpio.out0_7.set_high();
-
-        let output_to_input = output_pin.into_input_pin().unwrap();
-
-        assert!(output_to_input.is_high().unwrap());
-
-        output_to_input.into_output_pin(PinState::Low).unwrap();
-        input_to_output.into_input_pin().unwrap();
     }
 }
