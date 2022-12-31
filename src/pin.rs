@@ -16,7 +16,7 @@ use super::Register;
 ///
 /// The [`ExpanderInputPin`] instance can be used with other pieces of software using [`hal`].
 #[derive(Debug)]
-pub struct ExpanderInputPin<'a, I2C, Io, E>
+pub struct ExpanderInputPin<'a, I2C, Io>
 where
     I2C: I2c,
     Io: SyncExpander<I2C>,
@@ -25,14 +25,13 @@ where
     bank: GPIOBank,
     pin: u8,
     phantom_data: PhantomData<I2C>,
-    phantom_data2: PhantomData<E>,
 }
 
 /// Single output device pin implementing [`OutputPin`] and [`IoPin`] trait.
 ///
 /// The [`ExpanderInputPin`] instance can be used with other pieces of software using [`hal`].
 #[derive(Debug)]
-pub struct ExpanderOutputPin<'a, I2C, Io, E>
+pub struct ExpanderOutputPin<'a, I2C, Io>
 where
     I2C: I2c,
     Io: SyncExpander<I2C>,
@@ -41,10 +40,9 @@ where
     bank: GPIOBank,
     pin: u8,
     phantom_data: PhantomData<I2C>,
-    phantom_data2: PhantomData<E>,
 }
 
-impl<'a, I2C, E, Io> ExpanderInputPin<'a, I2C, Io, E>
+impl<'a, I2C, E, Io> ExpanderInputPin<'a, I2C, Io>
 where
     Io: SyncExpander<I2C>,
     E: core::fmt::Debug,
@@ -72,7 +70,6 @@ where
             bank,
             pin,
             phantom_data: PhantomData,
-            phantom_data2: PhantomData,
         })
     }
 
@@ -103,7 +100,7 @@ where
     }
 }
 
-impl<'a, I2C, E, Io> ExpanderOutputPin<'a, I2C, Io, E>
+impl<'a, I2C, E, Io> ExpanderOutputPin<'a, I2C, Io>
 where
     Io: SyncExpander<I2C>,
     E: core::fmt::Debug,
@@ -150,12 +147,11 @@ where
             bank,
             pin,
             phantom_data: PhantomData,
-            phantom_data2: PhantomData,
         })
     }
 }
 
-impl<'a, I2C, E, Io> ErrorType for ExpanderInputPin<'a, I2C, Io, E>
+impl<'a, I2C, E, Io> ErrorType for ExpanderInputPin<'a, I2C, Io>
 where
     Io: SyncExpander<I2C>,
     E: core::fmt::Debug,
@@ -164,7 +160,7 @@ where
     type Error = ExpanderError<E>;
 }
 
-impl<'a, I2C, E, Io> InputPin for ExpanderInputPin<'a, I2C, Io, E>
+impl<'a, I2C, E, Io> InputPin for ExpanderInputPin<'a, I2C, Io>
 where
     Io: SyncExpander<I2C>,
     E: core::fmt::Debug,
@@ -203,7 +199,7 @@ where
     }
 }
 
-impl<'a, I2C, Io, E> ErrorType for ExpanderOutputPin<'a, I2C, Io, E>
+impl<'a, I2C, Io, E> ErrorType for ExpanderOutputPin<'a, I2C, Io>
 where
     Io: SyncExpander<I2C>,
     E: core::fmt::Debug,
@@ -212,7 +208,7 @@ where
     type Error = ExpanderError<E>;
 }
 
-impl<'a, I2C, E, Io> OutputPin for ExpanderOutputPin<'a, I2C, Io, E>
+impl<'a, I2C, E, Io> OutputPin for ExpanderOutputPin<'a, I2C, Io>
 where
     Io: SyncExpander<I2C>,
     E: core::fmt::Debug,
