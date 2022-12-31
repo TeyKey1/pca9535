@@ -21,4 +21,4 @@ lazy_static = "1.4"
 pca9535 = { path = ".", features = ["std"] }
 rppal = { version = "0.14.1", features = ["hal"] }
 serial_test = "0.6"
-shared-bus = { version = "0.2.5", features = ["std",] }
+shared-bus = { version = "0.2.5", features = ["std", "eh-alpha"] }

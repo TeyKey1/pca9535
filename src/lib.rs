@@ -38,7 +38,7 @@ It relies on the open drain interrupt pin of the device to detect any changes to
 use pca9535::Pca9535Cached;
 
 let expander_interrupt_pin = ...; //A HAL GPIO Input pin which is connected to the interrupt pin of the IO Expander
-let expander = Pca9535Cached::new(i2c, address, &expander_interrupt_pin, true); // create cached expander and initialize cache to defaults
+let expander = Pca9535Cached::new(i2c, address, expander_interrupt_pin, true); // create cached expander and initialize cache to defaults
 ```
 ## Usage types
 Once the operation type has been determined there are two ways of interacting with the IO expander:

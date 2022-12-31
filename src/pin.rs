@@ -1,4 +1,5 @@
 //! Contains the implementation of the hal-pin usage inteface.
+use core::fmt::Debug;
 use core::marker::PhantomData;
 
 use hal::digital::{ErrorType, PinState};
@@ -12,7 +13,7 @@ use super::GPIOBank;
 use super::Polarity;
 use super::Register;
 
-/// Single input device pin implementing [`InputPin`] and [`IoPin`] trait.
+/// Single input device pin implementing [`InputPin`] trait.
 ///
 /// The [`ExpanderInputPin`] instance can be used with other pieces of software using [`hal`].
 #[derive(Debug)]
@@ -27,7 +28,7 @@ where
     phantom_data: PhantomData<I2C>,
 }
 
-/// Single output device pin implementing [`OutputPin`] and [`IoPin`] trait.
+/// Single output device pin implementing [`OutputPin`] trait.
 ///
 /// The [`ExpanderInputPin`] instance can be used with other pieces of software using [`hal`].
 #[derive(Debug)]
@@ -45,7 +46,7 @@ where
 impl<'a, I2C, E, Io> ExpanderInputPin<'a, I2C, Io>
 where
     Io: SyncExpander<I2C>,
-    E: core::fmt::Debug,
+    E: Debug,
     I2C: I2c<Error = E>,
 {
     /// Create a new input pin
@@ -103,7 +104,7 @@ where
 impl<'a, I2C, E, Io> ExpanderOutputPin<'a, I2C, Io>
 where
     Io: SyncExpander<I2C>,
-    E: core::fmt::Debug,
+    E: Debug,
     I2C: I2c<Error = E>,
 {
     /// Create a new output pin
@@ -154,7 +155,7 @@ where
 impl<'a, I2C, E, Io> ErrorType for ExpanderInputPin<'a, I2C, Io>
 where
     Io: SyncExpander<I2C>,
-    E: core::fmt::Debug,
+    E: Debug,
     I2C: I2c<Error = E>,
 {
     type Error = ExpanderError<E>;
@@ -163,7 +164,7 @@ where
 impl<'a, I2C, E, Io> InputPin for ExpanderInputPin<'a, I2C, Io>
 where
     Io: SyncExpander<I2C>,
-    E: core::fmt::Debug,
+    E: Debug,
     I2C: I2c<Error = E>,
 {
     fn is_high(&self) -> Result<bool, Self::Error> {
@@ -202,7 +203,7 @@ where
 impl<'a, I2C, Io, E> ErrorType for ExpanderOutputPin<'a, I2C, Io>
 where
     Io: SyncExpander<I2C>,
-    E: core::fmt::Debug,
+    E: Debug,
     I2C: I2c<Error = E>,
 {
     type Error = ExpanderError<E>;
@@ -211,7 +212,7 @@ where
 impl<'a, I2C, E, Io> OutputPin for ExpanderOutputPin<'a, I2C, Io>
 where
     Io: SyncExpander<I2C>,
-    E: core::fmt::Debug,
+    E: Debug,
     I2C: I2c<Error = E>,
 {
     fn set_low(&mut self) -> Result<(), Self::Error> {

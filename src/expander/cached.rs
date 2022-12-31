@@ -148,7 +148,7 @@ impl<I2C, IP, E> Expander<I2C> for Pca9535Cached<I2C, IP>
 where
     IP: InputPin,
     I2C: I2c<Error = E>,
-    E: core::fmt::Debug,
+    E: Debug,
 {
     /// Writes one byte to given register
     ///
