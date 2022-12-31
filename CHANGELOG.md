@@ -1,3 +1,10 @@
+# Upcoming release
+**Breaking changes!**
+- Updated to embedded hal 1.0.0-alpha.9 (@MajorArkwolf)
+- Removed IOPin (currently not supported in embedded hal 1.0.0-alpha.9, will be readded once it is supported again) (@MajorArkwolf)
+
+Thanks to @MajorArkwolf :)
+
 # 1.1.0
 - Added `Debug` trait implementation for all types which are accessible by the library user
 - Added `Clone` and `Copy` trait implementation for `Polarity` enum
