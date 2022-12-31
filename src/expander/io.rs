@@ -1,7 +1,7 @@
 //! Contains the implementation to make an [`Expander`] Sync.
 use core::marker::PhantomData;
 
-use hal::i2c::blocking::{Write, WriteRead};
+use hal::i2c::{ErrorType, I2c};
 
 use super::{Expander, ExpanderError, Register, SyncExpander};
 use crate::ExpanderMutex;
@@ -11,7 +11,7 @@ use crate::ExpanderMutex;
 #[derive(Debug)]
 pub struct IoExpander<I2C, Ex, Em>
 where
-    I2C: Write + WriteRead,
+    I2C: I2c,
     Ex: Expander<I2C> + Send,
     Em: ExpanderMutex<Ex>,
 {
@@ -22,7 +22,7 @@ where
 
 impl<I2C, Em, Ex> IoExpander<I2C, Ex, Em>
 where
-    I2C: Write + WriteRead,
+    I2C: I2c,
     Em: ExpanderMutex<Ex>,
     Ex: Expander<I2C> + Send,
 {
@@ -38,7 +38,7 @@ where
 
 impl<I2C, Em, Ex> SyncExpander<I2C> for IoExpander<I2C, Ex, Em>
 where
-    I2C: Write + WriteRead,
+    I2C: I2c,
     Em: ExpanderMutex<Ex>,
     Ex: Expander<I2C> + Send,
 {
@@ -46,14 +46,14 @@ where
         &self,
         register: Register,
         data: u8,
-    ) -> Result<(), ExpanderError<<I2C as Write>::Error>> {
+    ) -> Result<(), ExpanderError<<I2C as ErrorType>::Error>> {
         self.expander_mutex.lock(|ex| ex.write_byte(register, data))
     }
     fn read_byte(
         &self,
         register: Register,
         buffer: &mut u8,
-    ) -> Result<(), ExpanderError<<I2C as WriteRead>::Error>> {
+    ) -> Result<(), ExpanderError<<I2C as ErrorType>::Error>> {
         self.expander_mutex
             .lock(|ex| ex.read_byte(register, buffer))
     }
@@ -61,7 +61,7 @@ where
         &self,
         register: Register,
         data: u16,
-    ) -> Result<(), ExpanderError<<I2C as Write>::Error>> {
+    ) -> Result<(), ExpanderError<<I2C as ErrorType>::Error>> {
         self.expander_mutex
             .lock(|ex| ex.write_halfword(register, data))
     }
@@ -69,7 +69,7 @@ where
         &self,
         register: Register,
         buffer: &mut u16,
-    ) -> Result<(), ExpanderError<<I2C as WriteRead>::Error>> {
+    ) -> Result<(), ExpanderError<<I2C as ErrorType>::Error>> {
         self.expander_mutex
             .lock(|ex| ex.read_halfword(register, buffer))
     }

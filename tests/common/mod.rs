@@ -1,4 +1,4 @@
-use hal::i2c::blocking::{Write, WriteRead};
+use hal::i2c::I2c as HalI2c;
 use lazy_static::lazy_static;
 use shared_bus::{BusManager, I2cProxy};
 use std::sync::Mutex;
@@ -57,7 +57,7 @@ pub struct RpiGPIO {
 pub struct Pca9535GPIO<'a, T, I2C>
 where
     T: SyncExpander<I2C>,
-    I2C: Write + WriteRead,
+    I2C: HalI2c,
 {
     pub _in0_3: ExpanderInputPin<'a, I2C, T>,
     pub in0_4: ExpanderInputPin<'a, I2C, T>,

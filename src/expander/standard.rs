@@ -1,7 +1,7 @@
 //! Implements the standard interface for all types implementing [`Expander`] trait.
 use core::fmt::Debug;
 
-use hal::i2c::blocking::{Write, WriteRead};
+use hal::i2c::I2c;
 
 use super::{Expander, ExpanderError, GPIOBank, Register};
 
@@ -12,7 +12,7 @@ use super::{Expander, ExpanderError, GPIOBank, Register};
 pub trait StandardExpanderInterface<I2C, E>: Expander<I2C>
 where
     E: Debug,
-    I2C: Write<Error = E> + WriteRead<Error = E>,
+    I2C: I2c<Error = E>,
 {
     fn pin_set_high(&mut self, bank: GPIOBank, pin: u8) -> Result<(), ExpanderError<E>> {
         assert!(pin < 8);
