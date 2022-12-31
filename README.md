@@ -3,6 +3,13 @@
 
 PCA9535 IO-Expander driver using embedded-hal.
 
+## Compatibility
+As embedded-hal is still in the alpha phase this driver will have breaking changes on minor versions. Please refer to the table below to select the appropriate driver version for your desired embedded-hal version:
+| embedded-hal  | pca9535 |
+| ------------- | ------------- |
+| 1.0.0-alpha.9 | 1.2.* |
+| 1.0.0-alpha.5  | 1.1.* |
+
 ## Features
 
 ### Two expander modes:
@@ -49,7 +56,7 @@ use pca9535::{ExpanderInputPin, ExpanderOutputPin, GPIOBank, IoExpander, Pca9535
 let i2c = I2c::new().unwrap();
 let interrupt_pin = Gpio::new().unwrap().get(1).unwrap().into_input();
 
-let expander = Pca9535Cached::new(i2c, 32, &interrupt_pin, true).unwrap();
+let expander = Pca9535Cached::new(i2c, 32, interrupt_pin, true).unwrap();
 let io_expander: IoExpander<Mutex<_>, _> = IoExpander::new(expander);
 
 let input_pin = ExpanderInputPin::new(&io_expander, GPIOBank::Bank0, 4).unwrap();

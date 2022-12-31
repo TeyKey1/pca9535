@@ -118,7 +118,7 @@ dependencies = [
 
 [[package]]
 name = "pca9535"
-version = "1.1.0"
+version = "1.2.0"
 dependencies = [
  "embedded-hal 1.0.0-alpha.9",
  "lazy_static",
