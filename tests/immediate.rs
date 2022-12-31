@@ -208,7 +208,6 @@ mod pin {
             'static,
             IoExpander<ShareableI2c, ImmediateExpander, Mutex<ImmediateExpander>>,
             ShareableI2c,
-            rppal::i2c::Error,
         >,
     >;
 

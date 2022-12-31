@@ -226,7 +226,6 @@ mod pin {
             'static,
             IoExpander<ShareableI2c, CachedExpander, Mutex<CachedExpander>>,
             ShareableI2c,
-            rppal::i2c::Error,
         >,
     >;
 

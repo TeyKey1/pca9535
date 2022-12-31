@@ -54,13 +54,13 @@ pub struct RpiGPIO {
     pub _in1_7: InputPin,
 }
 
-pub struct Pca9535GPIO<'a, T, I2C, E>
+pub struct Pca9535GPIO<'a, T, I2C>
 where
     T: SyncExpander<I2C>,
-    I2C: HalI2c<Error = E>,
+    I2C: HalI2c,
 {
-    pub _in0_3: ExpanderInputPin<'a, I2C, T, E>,
-    pub in0_4: ExpanderInputPin<'a, I2C, T, E>,
-    pub _out0_7: ExpanderOutputPin<'a, I2C, T, E>,
-    pub out1_5: ExpanderOutputPin<'a, I2C, T, E>,
+    pub _in0_3: ExpanderInputPin<'a, I2C, T>,
+    pub in0_4: ExpanderInputPin<'a, I2C, T>,
+    pub _out0_7: ExpanderOutputPin<'a, I2C, T>,
+    pub out1_5: ExpanderOutputPin<'a, I2C, T>,
 }
