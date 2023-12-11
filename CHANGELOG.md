@@ -1,3 +1,7 @@
+# Unreleased
+**Breaking changes!**
+- Update to embedded-hal v1.0.0 rc2
+
 # 1.2.0
 **Breaking changes!**
 - Updated to embedded hal 1.0.0-alpha.9 (@MajorArkwolf)
