@@ -122,8 +122,10 @@ version = "1.2.0"
 dependencies = [
  "embedded-hal 1.0.0-rc.2",
  "lazy_static",
+ "pca9535",
  "rppal",
  "serial_test",
+ "shared-bus",
 ]
 
 [[package]]
@@ -226,6 +228,17 @@ dependencies = [
  "quote",
  "rustversion",
  "syn",
+]
+
+[[package]]
+name = "shared-bus"
+version = "0.3.1"
+source = "git+https://github.com/TeyKey1/shared-bus.git?rev=87af545#87af5451a39a3e138a831f845b9dcc408a78e9eb"
+dependencies = [
+ "embedded-hal 0.2.7",
+ "embedded-hal 1.0.0-rc.2",
+ "nb 1.0.0",
+ "once_cell",
 ]
 
 [[package]]
