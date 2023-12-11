@@ -74,6 +74,12 @@ where
     WriteReadError(ERR),
 }
 
+impl<ERR: Debug> hal::digital::Error for ExpanderError<ERR> {
+    fn kind(&self) -> hal::digital::ErrorKind {
+        hal::digital::ErrorKind::Other
+    }
+}
+
 #[cfg(feature = "std")]
 impl<T> std::fmt::Display for ExpanderError<T>
 where

@@ -14,11 +14,11 @@ license = "MIT"
 std = []
 
 [dependencies]
-hal = { version = "=1.0.0-alpha.9", package = "embedded-hal" }
+hal = { version = "=1.0.0-rc.2", package = "embedded-hal" }
 
 [dev-dependencies]
 lazy_static = "1.4"
-pca9535 = { path = ".", features = ["std"] }
-rppal = { version = "0.14.1", features = ["hal"] }
+#pca9535 = { path = ".", features = ["std"] }
+rppal = { version = "0.16.0", features = ["hal"] }
 serial_test = "0.6"
-shared-bus = { version = "0.2.5", features = ["std", "eh-alpha"] }
+#shared-bus = { version = "0.2.5", features = ["std", "eh-alpha"] }
