@@ -6,6 +6,13 @@
 - Added `destroy()` functions to expander impls which allows driver users to retrieve the I2C bus and interrupt pin
 - Fixed some documentation examples + typos
 
+## Migration
+
+As a general migration guideline to embedded-hal v1 consult the [migration guide](https://github.com/rust-embedded/embedded-hal/blob/master/docs/migrating-from-0.2-to-1.0.md)
+
+For users of PCA9535 most things should work out of the box. Only change required is that due to the `InputPin` trait now taking `&mut self` you need to modify the interrupt pin provided to the cached expander struct to be mutable.
+In cases you have previously used [shared-bus](https://crates.io/crates/shared-bus) for I2C bus sharing it is now recommended to switch to [embedded-hal-bus](https://crates.io/crates/embedded-hal-bus) instead.
+
 # 1.2.0
 
 **Breaking changes!**
