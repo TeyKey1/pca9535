@@ -167,7 +167,7 @@ where
     E: Debug,
     I2C: I2c<Error = E>,
 {
-    fn is_high(&self) -> Result<bool, Self::Error> {
+    fn is_high(&mut self) -> Result<bool, Self::Error> {
         let register = match self.bank {
             GPIOBank::Bank0 => Register::InputPort0,
             GPIOBank::Bank1 => Register::InputPort1,
@@ -183,7 +183,7 @@ where
         }
     }
 
-    fn is_low(&self) -> Result<bool, Self::Error> {
+    fn is_low(&mut self) -> Result<bool, Self::Error> {
         let register = match self.bank {
             GPIOBank::Bank0 => Register::InputPort0,
             GPIOBank::Bank1 => Register::InputPort1,

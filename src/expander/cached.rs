@@ -37,14 +37,14 @@ where
     /// Creates a new cached PCA9535 instance.
     ///
     /// # Cached registers
-    /// The init_defaults argument assumes the default values for all the registers of the device if set to `true` (Default register condition after device startup, see the device's documentation for more information).
-    /// In that case no bus transaction is created to verify if this is actually the case on the device. Only use this option if you have not made any transactions with the device before creating this expander struct,
+    /// The init_defaults argument assumes the default values for all the device registers if set to `true` (Default register condition after device startup; see the device's documentation for more information).
+    /// In that case, no bus transaction is created to verify if this is actually the case on the device. Only use this option if you have not made any transactions with the device before creating this expander struct,
     /// otherwise you might encounter unexpected behavior of the device!
     ///
-    /// If the device was used before calling this function and should keep its state you should set init_defaults to `false`. This triggers a bus transaction to read out all the devices' registers and caches the received values.
+    /// If the device was used before calling this function and should keep its state, you should set init_defaults to `false`. This triggers a bus transaction to read out all the devices' registers and caches the received values.
     ///
     /// # Panics
-    /// If given device hardware address is outside of the permittable range of `32-39`.
+    /// If the given device hardware address is outside the permittable range of `32-39`.
     pub fn new(
         i2c: I2C,
         address: u8,
@@ -74,7 +74,12 @@ where
         Ok(expander)
     }
 
-    /// Initializes the device's cache by reading out all the required registers of the device.
+    /// Destroys the expander struct, returning the contained I2C and interrupt pin
+    pub fn destroy(self) -> (I2C, IP) {
+        (self.i2c, self.interrupt_pin)
+    }
+
+    /// Initializes the device's cache by reading out all the required device registers.
     fn init_cache(expander: &mut Self) -> Result<(), ExpanderError<E>> {
         let mut buf: [u8; 2] = [0x00, 0x00];
 
@@ -150,12 +155,12 @@ where
     I2C: I2c<Error = E>,
     E: Debug,
 {
-    /// Writes one byte to given register
+    /// Writes one byte to the given register
     ///
-    /// Only use this function if you really have to. The crate provides simpler ways of interacting with the device for most usecases.
+    /// Only use this function if you really have to. For most use cases, the crate provides simpler ways of interacting with the device.
     ///
     /// # Cached
-    /// If the bus write succeeds the written data is cached to avoid the need for bus traffic upon reading the written register.
+    /// If the bus write succeeds, the written data is cached to avoid the need for bus traffic upon reading the written register.
     fn write_byte(&mut self, register: Register, data: u8) -> Result<(), ExpanderError<E>> {
         self.i2c
             .write(self.address, &[register as u8, data])
@@ -182,12 +187,13 @@ where
         Ok(())
     }
 
-    /// Reads one byte of given register
+    /// Reads one byte of the given register
     ///
-    /// Only use this function if you really have to. The crate provides simpler ways of interacting with the device for most usecases.
+    /// Only use this function if you really have to. For most use cases, the crate provides simpler ways of interacting with the device.
     ///
     /// # Cached
-    /// This function only creates bus traffic in case the provided interrupt pin is held at a `low` voltage level at the time of the function call and the provided register is an input register. In that case the data is being read from the device, as the devices interrupt output indicates a data change. Otherwise the cached value is returned without causing any bus traffic.
+    /// This function only creates bus traffic if the provided interrupt pin is held at a `low` voltage level at the time of the function call and the provided register is an input register.
+    /// In that case, the data is being read from the device, as the device's interrupt output indicates a data change. Otherwise the cached value is returned without causing any bus traffic.
     fn read_byte(&mut self, register: Register, buffer: &mut u8) -> Result<(), ExpanderError<E>> {
         if self.interrupt_pin.is_low().unwrap() && register.is_input() {
             let mut buf = [0u8];
@@ -206,15 +212,15 @@ where
         Ok(())
     }
 
-    /// Writes one halfword to given register
+    /// Writes one half-word to the given register
     ///
-    /// Only use this function if you really have to. The crate provides simpler ways of interacting with the device for most usecases.
+    /// Only use this function if you really have to. For most use cases, the crate provides simpler ways of interacting with the device.
     ///
     /// # Register pairs
-    /// please see [`Register`] for more information about the register pairs and how they affect the halfword read and write functions.
+    /// Please see [`Register`] for more information about the register pairs and how they affect the half-word read and write functions.
     ///
     /// # Cached
-    /// If the bus write succeeds the written data is cached to avoid the need for bus traffic upon reading the written register.
+    /// If the bus write succeeds, the written data is cached to avoid the need for bus traffic upon reading the written register.
     fn write_halfword(&mut self, register: Register, data: u16) -> Result<(), ExpanderError<E>> {
         self.i2c
             .write(
@@ -256,17 +262,17 @@ where
         Ok(())
     }
 
-    /// Reads one halfword of given register
+    /// Reads one half-word of the given register
     ///
-    /// Only use this function if you really have to. The crate provides simpler ways of interacting with the device for most usecases.
+    /// Only use this function if you really have to. For most use cases, the crate provides simpler ways of interacting with the device.
     ///
     /// # Register pairs
-    /// please see [`Register`] for more information about the register pairs and how they affect the halfword read and write functions.
+    /// Please see [`Register`] for more information about the register pairs and how they affect the half-word read and write functions.
     ///
     /// # Cached
     /// This function only creates bus traffic in case the provided interrupt pin is held at a `low` voltage level at the time of the function call and the provided
-    /// register is an input register. In that case the data is being read from the device, as the devices interrupt output indicates a data change.
-    /// Otherwise the cached value is returned without causing any bus traffic.
+    /// register is an input register. In that case, the data is being read from the device, as the device's interrupt output indicates a data change.
+    /// Otherwise, the cached value is returned without causing any bus traffic.
     fn read_halfword(
         &mut self,
         register: Register,

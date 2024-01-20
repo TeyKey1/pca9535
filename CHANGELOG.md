@@ -2,7 +2,9 @@
 
 **Breaking changes!**
 
-- Update to embedded-hal v1.0
+- Updated to embedded-hal v1.0
+- Added `destroy()` functions to expander impls which allows driver users to retrieve the I2C bus and interrupt pin
+- Fixed some documentation examples + typos
 
 # 1.2.0
 
