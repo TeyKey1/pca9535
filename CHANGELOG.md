@@ -1,5 +1,7 @@
 # Unreleased
 
+# 2.0.0
+
 **Breaking changes!**
 
 - Updated to embedded-hal v1.0
