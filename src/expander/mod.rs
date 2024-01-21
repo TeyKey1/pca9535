@@ -38,7 +38,7 @@ where
     ) -> Result<(), ExpanderError<<I2C as ErrorType>::Error>>;
 }
 
-/// Trait for IO expanders which use some synchronization primitive for the writes and reads. This implementation makes the expander sync and usable accross threads etc.
+/// Trait for IO expanders which use some synchronization primitive for the writes and reads. This implementation makes the expander sync and usable accross threads.
 pub trait SyncExpander<I2C>
 where
     I2C: I2c,

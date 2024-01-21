@@ -1,4 +1,4 @@
-//! Implements the standard interface for all types implementing [`Expander`] trait.
+//! Implements the standard interface for all types implementing the [`Expander`] trait.
 use core::fmt::Debug;
 
 use hal::i2c::I2c;
@@ -8,7 +8,7 @@ use super::{Expander, ExpanderError, GPIOBank, Register};
 /// Standard expander interface not using [`hal`].
 ///
 /// This interface does not track the state of the pins! Therefore, the user needs to ensure the pins are in input or output configuration before
-/// proceeding to call functions related to input or output pins. Otherwise the results of those functions might not cause the expected behavior of the device.
+/// proceeding to call functions related to input or output pins. Otherwise, the results of those functions might not cause the expected behavior of the device.
 pub trait StandardExpanderInterface<I2C, E>: Expander<I2C>
 where
     E: Debug,
@@ -48,7 +48,7 @@ where
         self.write_byte(register, reg_val & !(0x01 << pin))
     }
 
-    /// Checks if input state of given pin is `high`. This function works with pins configured as inputs as well as outputs.
+    /// Checks if the input state of the given pin is `high`. This function works with pins configured as inputs as well as outputs.
     ///
     /// The function result does not necessarily represent the logic level of the applied voltage at the given pin but the value inside the input register of the device.
     /// Which is `1` or `0` Depending on the current polarity inversion configuration of the pin.
@@ -73,7 +73,7 @@ where
         }
     }
 
-    /// Checks if input state of given pin is `low`. This function works with pins configured as inputs as well as outputs.
+    /// Checks if the input state of the given pin is `low`. This function works with pins configured as inputs as well as outputs.
     ///
     /// The function result does not necessarily represent the logic level of the applied voltage at the given pin but the value inside the input register of the device.
     /// Which is `1` or `0` Depending on the current polarity inversion configuration of the pin.
@@ -117,7 +117,7 @@ where
         self.write_byte(register, reg_val | (0x01 << pin))
     }
 
-    /// Configures given pin as output.
+    /// Configures the given pin as output.
     ///
     /// # Panics
     /// The function will panic if the provided pin is not in the allowed range of 0-7
@@ -159,7 +159,7 @@ where
 
     /// Sets the input polarity of the given pin to normal.
     ///
-    /// A logic high voltage applied at an input pin results in a `1` written to the devices input register and thus being registered as `high` by the driver.
+    /// A logic high voltage applied at an input pin results in a `1` written to the device's input register, thus being registered as `high` by the driver.
     ///
     /// # Panics
     /// The function will panic if the provided pin is not in the allowed range of 0-7
@@ -180,14 +180,14 @@ where
 
     /// Sets the input polarity of all pins to inverted.
     ///
-    /// A logic high voltage applied at an input pin results in a `0` written to the devices input register and thus being registered as `low` by the driver.
+    /// A logic high voltage applied at an input pin results in a `0` written to the device's input register, thus being registered as `low` by the driver.
     fn inverse_polarity(&mut self) -> Result<(), ExpanderError<E>> {
         self.write_halfword(Register::PolarityInversionPort0, 0xFFFF_u16)
     }
 
     /// Sets the input polarity of all pins to normal.
     ///
-    /// A logic high voltage applied at an input pin results in a `1` written to the devices input register and thus being registered as `high` by the driver.
+    /// A logic high voltage applied at an input pin results in a `1` written to the device's input register, thus being registered as `high` by the driver.
     fn normal_polarity(&mut self) -> Result<(), ExpanderError<E>> {
         self.write_halfword(Register::PolarityInversionPort0, 0x0_u16)
     }

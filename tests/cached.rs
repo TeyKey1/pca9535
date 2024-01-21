@@ -1,31 +1,37 @@
 mod common;
 
-use common::{ShareableI2c, ADDR, I2C_BUS};
+use common::{ShareableI2c, ADDR, I2C_MUTEX};
 
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 
+use embedded_hal_bus::i2c::MutexDevice;
 use rppal::gpio::{Gpio, InputPin};
 use serial_test::serial;
 use std::sync::Mutex;
 
 use pca9535::{Expander, Pca9535Cached, Register};
 
-pub type CachedExpander = Pca9535Cached<ShareableI2c, &'static InputPin>;
+use crate::common::ShareableInputPin;
 
-lazy_static! {
-    static ref INTERRUPT_PIN: InputPin = {
-        let gpio = Gpio::new().unwrap();
+pub type CachedExpander = Pca9535Cached<ShareableI2c, ShareableInputPin<'static, InputPin>>;
 
-        gpio.get(6).unwrap().into_input()
-    };
-    static ref EXPANDER: Mutex<CachedExpander> = {
-        let i2c_bus = *I2C_BUS.lock().unwrap();
-        let expander =
-            Pca9535Cached::new(i2c_bus.acquire_i2c(), ADDR, &*INTERRUPT_PIN, false).unwrap();
+static INTERRUPT_PIN: Lazy<Mutex<InputPin>> = Lazy::new(|| {
+    let gpio = Gpio::new().unwrap();
 
-        Mutex::new(expander)
-    };
-}
+    Mutex::new(gpio.get(6).unwrap().into_input())
+});
+
+static EXPANDER: Lazy<Mutex<CachedExpander>> = Lazy::new(|| {
+    let expander = Pca9535Cached::new(
+        MutexDevice::new(&I2C_MUTEX),
+        ADDR,
+        ShareableInputPin::new(&INTERRUPT_PIN),
+        false,
+    )
+    .unwrap();
+
+    Mutex::new(expander)
+});
 
 #[test]
 #[serial(cached_std)]
@@ -208,11 +214,12 @@ mod standard {
 
 #[cfg(test)]
 mod pin {
-    use super::common::{Pca9535GPIO, ShareableI2c, ADDR, I2C_BUS, RPI_GPIO};
+    use super::common::{Pca9535GPIO, ShareableI2c, ShareableInputPin, ADDR, I2C_MUTEX, RPI_GPIO};
 
     use super::{CachedExpander, INTERRUPT_PIN};
 
-    use lazy_static::lazy_static;
+    use embedded_hal_bus::i2c::MutexDevice;
+    use once_cell::sync::Lazy;
     use serial_test::serial;
     use std::sync::Mutex;
 
@@ -229,33 +236,36 @@ mod pin {
         >,
     >;
 
-    lazy_static! {
-        static ref IO_EXPANDER: IoExpander<ShareableI2c, CachedExpander, Mutex<CachedExpander>> = {
-            let i2c_bus = *I2C_BUS.lock().unwrap();
-            let expander =
-                Pca9535Cached::new(i2c_bus.acquire_i2c(), ADDR, &*INTERRUPT_PIN, false).unwrap();
+    static IO_EXPANDER: Lazy<IoExpander<ShareableI2c, CachedExpander, Mutex<CachedExpander>>> =
+        Lazy::new(|| {
+            let expander = Pca9535Cached::new(
+                MutexDevice::new(&I2C_MUTEX),
+                ADDR,
+                ShareableInputPin::new(&INTERRUPT_PIN),
+                false,
+            )
+            .unwrap();
 
             IoExpander::new(expander)
+        });
+    static PCA9535_GPIO: Lazy<Pca9535Gpio> = Lazy::new(|| {
+        let pca9535_gpio = Pca9535GPIO {
+            _in0_3: ExpanderInputPin::new(&*IO_EXPANDER, GPIOBank::Bank0, 3).unwrap(),
+            in0_4: ExpanderInputPin::new(&*IO_EXPANDER, GPIOBank::Bank0, 4).unwrap(),
+            _out0_7: ExpanderOutputPin::new(&*IO_EXPANDER, GPIOBank::Bank0, 7, PinState::High)
+                .unwrap(),
+            out1_5: ExpanderOutputPin::new(&*IO_EXPANDER, GPIOBank::Bank1, 5, PinState::Low)
+                .unwrap(),
         };
-        static ref PCA9535_GPIO: Pca9535Gpio = {
-            let pca9535_gpio = Pca9535GPIO {
-                _in0_3: ExpanderInputPin::new(&*IO_EXPANDER, GPIOBank::Bank0, 3).unwrap(),
-                in0_4: ExpanderInputPin::new(&*IO_EXPANDER, GPIOBank::Bank0, 4).unwrap(),
-                _out0_7: ExpanderOutputPin::new(&*IO_EXPANDER, GPIOBank::Bank0, 7, PinState::High)
-                    .unwrap(),
-                out1_5: ExpanderOutputPin::new(&*IO_EXPANDER, GPIOBank::Bank1, 5, PinState::Low)
-                    .unwrap(),
-            };
 
-            Mutex::new(pca9535_gpio)
-        };
-    }
+        Mutex::new(pca9535_gpio)
+    });
 
     #[test]
     #[serial(cached_pin)]
     fn input_pin_is_high() {
         let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
-        let pca9535_gpio = PCA9535_GPIO.lock().unwrap();
+        let mut pca9535_gpio = PCA9535_GPIO.lock().unwrap();
 
         rpi_gpio.out0_4.set_high();
 
@@ -266,7 +276,7 @@ mod pin {
     #[serial(cached_pin)]
     fn input_pin_is_low() {
         let rpi_gpio = &mut *RPI_GPIO.lock().unwrap();
-        let pca9535_gpio = PCA9535_GPIO.lock().unwrap();
+        let mut pca9535_gpio = PCA9535_GPIO.lock().unwrap();
 
         rpi_gpio.out0_4.set_low();
 

@@ -23,11 +23,16 @@ where
     /// Creates a new immediate PCA9535 instance.
     ///
     /// # Panics
-    /// If given device hardware address is outside of the permittable range of `32-39`.
+    /// If the given device hardware address is outside the permittable range of `32-39`.
     pub fn new(i2c: I2C, address: u8) -> Self {
         assert!(address > 31 && address < 40);
 
         Self { address, i2c }
+    }
+
+    /// Destroys the expander struct, returning the contained I2C
+    pub fn destroy(self) -> I2C {
+        self.i2c
     }
 }
 
@@ -36,18 +41,18 @@ where
     E: Debug,
     I2C: I2c<Error = E>,
 {
-    /// Writes one byte to given register
+    /// Writes one byte to the given register
     ///
-    /// Only use this function if you really have to. The crate provides simpler ways of interacting with the device for most usecases.
+    /// Only use this function if you really have to. For most use cases, the crate provides simpler ways of interacting with the device.
     fn write_byte(&mut self, register: Register, data: u8) -> Result<(), ExpanderError<E>> {
         self.i2c
             .write(self.address, &[register as u8, data])
             .map_err(ExpanderError::WriteError)
     }
 
-    /// Reads one byte of given register
+    /// Reads one byte of the given register
     ///
-    /// Only use this function if you really have to. The crate provides simpler ways of interacting with the device for most usecases.
+    /// Only use this function if you really have to. For most use cases, the crate provides simpler ways of interacting with the device.
     fn read_byte(&mut self, register: Register, buffer: &mut u8) -> Result<(), ExpanderError<E>> {
         let mut buf = [0_u8];
 
@@ -60,12 +65,12 @@ where
         Ok(())
     }
 
-    /// Writes one halfword to given register
+    /// Writes one halfword to the given register
     ///
-    /// Only use this function if you really have to. The crate provides simpler ways of interacting with the device for most usecases.
+    /// Only use this function if you really have to. For most use cases, the crate provides simpler ways of interacting with the device.
     ///
     /// # Register pairs
-    /// please see [`Register`] for more information about the register pairs and how they affect the halfword read and write functions.
+    /// Please see [`Register`] for more information about the register pairs and how they affect the half-word read and write functions.
     fn write_halfword(&mut self, register: Register, data: u16) -> Result<(), ExpanderError<E>> {
         self.i2c
             .write(
@@ -75,12 +80,12 @@ where
             .map_err(ExpanderError::WriteError)
     }
 
-    /// Reads one halfword of given register
+    /// Reads one halfword of the given register
     ///
-    /// Only use this function if you really have to. The crate provides simpler ways of interacting with the device for most usecases.
+    /// Only use this function if you really have to. For most use cases, the crate provides simpler ways of interacting with the device.
     ///
     /// # Register pairs
-    /// please see [`Register`] for more information about the register pairs and how they affect the halfword read and write functions.
+    /// Please see [`Register`] for more information about the register pairs and how they affect the half-word read and write functions.
     fn read_halfword(
         &mut self,
         register: Register,
